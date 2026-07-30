@@ -3,10 +3,12 @@ import { useInfraTree } from './hooks/useInfraTree'
 import { useConnections } from './hooks/useConnections'
 import { useAlerts } from './hooks/useAlerts'
 import { useTags } from './hooks/useTags'
-import { findNodeById, flattenTree } from './utils/tree'
+import { useEffect } from 'react'
+import { findNodeById, flattenTree, getAncestors } from './utils/tree'
 import { GridView } from './views/GridView'
 import { SidePanel } from './components/SidePanel'
 import { FilterBar } from './components/Toolbar/FilterBar'
+import { Breadcrumb } from './components/Toolbar/Breadcrumb'
 import './App.css'
 
 function App() {
@@ -32,7 +34,34 @@ function App() {
   const setFilterTag = useInfraStore((s) => s.setFilterTag)
 
   const selectedNode = selectedNodeId ? findNodeById(tree, selectedNodeId) : null
+  const breadcrumbPath = selectedNodeId ? getAncestors(tree, selectedNodeId) : []
   const alertingIds = new Set(alerts.map((a) => a.nodeId))
+
+  // URL partageable : ?node=<id> suit la sélection
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (selectedNodeId) url.searchParams.set('node', selectedNodeId)
+    else url.searchParams.delete('node')
+    window.history.replaceState(null, '', url)
+  }, [selectedNodeId])
+
+  // Restaurer la sélection depuis l'URL au premier arbre chargé
+  useEffect(() => {
+    if (!tree) return
+    const fromUrl = new URLSearchParams(window.location.search).get('node')
+    if (fromUrl && !selectedNodeId && findNodeById(tree, fromUrl)) {
+      selectNode(fromUrl)
+    }
+  }, [tree, selectedNodeId, selectNode])
+
+  // Échap ferme le panel
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') selectNode(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selectNode])
   const namespaces = [
     ...new Set(flattenTree(tree).flatMap((n) => (n.namespace ? [n.namespace] : []))),
   ].sort()
@@ -41,6 +70,7 @@ function App() {
     <div className="app">
       <header className="toolbar">
         <span className="toolbar__logo">InfraMaps</span>
+        <Breadcrumb path={breadcrumbPath} onNavigate={selectNode} />
         <FilterBar
           namespaces={namespaces}
           tags={tags}

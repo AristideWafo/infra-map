@@ -462,3 +462,35 @@
   font-size: var(--text-sm);
   padding: 6px var(--node-padding);
 }
+
+/* Breadcrumb */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.breadcrumb__sep {
+  color: var(--text-disabled);
+  margin: 0 2px;
+}
+
+.breadcrumb__link {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 0;
+}
+
+.breadcrumb__link:hover {
+  color: var(--accent);
+}
+
+.breadcrumb__current {
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
