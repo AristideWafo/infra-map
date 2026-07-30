@@ -35,7 +35,6 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
   # Publie l'image versionnée sur GHCR quand une release backend est créée.
   # Tag image = tag de release. Jamais de :latest en prod.
