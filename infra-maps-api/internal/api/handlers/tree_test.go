@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -191,4 +192,38 @@ func TestGetTree_ServesStaleDataAfterTTL(t *testing.T) {
 	// Données périmées servies quand même, avec l'âge exposé
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.NotEmpty(t, w.Header().Get("X-Cache-Age-Seconds"))
+}
+
+func TestGetConnections_Pagination(t *testing.T) {
+	r, c := setupRouter(t, fixtureTree())
+	conns := make([]*models.Connection, 0, 120)
+	for i := 0; i < 120; i++ {
+		conns = append(conns, &models.Connection{ID: fmt.Sprintf("c-%03d", i), Type: "service"})
+	}
+	c.Set(scraper.CacheKeyConnections, conns)
+
+	var body struct {
+		Connections []*models.Connection `json:"connections"`
+		Total       int                  `json:"total"`
+		Page        int                  `json:"page"`
+		Limit       int                  `json:"limit"`
+	}
+
+	// Défauts : page=1, limit=50
+	require.NoError(t, json.Unmarshal(get(r, "/api/v1/connections").Body.Bytes(), &body))
+	assert.Equal(t, 120, body.Total)
+	assert.Len(t, body.Connections, 50)
+	assert.Equal(t, 1, body.Page)
+
+	// Page 3 : les 20 restants
+	require.NoError(t, json.Unmarshal(get(r, "/api/v1/connections?page=3").Body.Bytes(), &body))
+	assert.Len(t, body.Connections, 20)
+
+	// Page au-delà : vide, pas d'erreur
+	require.NoError(t, json.Unmarshal(get(r, "/api/v1/connections?page=9").Body.Bytes(), &body))
+	assert.Empty(t, body.Connections)
+
+	// Params invalides
+	assert.Equal(t, http.StatusBadRequest, get(r, "/api/v1/connections?limit=999").Code)
+	assert.Equal(t, http.StatusBadRequest, get(r, "/api/v1/connections?page=0").Code)
 }
