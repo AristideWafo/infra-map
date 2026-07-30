@@ -134,11 +134,16 @@ Phase 5   ⏳  Actions production [PRUDENCE — décision future]
 
 ---
 
-## Phase 2 — Utilisabilité Quotidienne
-
-**Estimé :** 2–3 semaines (après Phase 1 stable)
+## Phase 2 — 🔄 Utilisabilité Quotidienne (P0 livrés le 2026-07-30)
 
 **Objectif :** InfraMaps devient agréable à utiliser tous les jours.
+
+**Livré :**
+- Backend : proxy métriques historiques `/nodes/:id/metrics` (range queries PromQL, mock synthétique en dev), proxy Loki `/nodes/:id/logs` (résolution UID→nom de pod, `ERR_LOKI_DISABLED` si non configuré), WebSocket `/ws/alerts` (hub + watcher diff fired/resolved + replay de l'état aux nouveaux clients), config env complète, CORS configurable.
+- Front : SidePanel à onglets Métriques (Recharts) | Logs (LogViewer, filtre niveau, auto-scroll) | Détails ; alertes temps réel via WS avec reconnexion backoff (1s→30s) et pulse CSS sur les nœuds en alerte.
+- Packaging : chart Helm complet (RBAC moindre privilège, probes, non-root, limits, tag image = appVersion), `helm lint` + `template` verts.
+
+**Restant :** breadcrumb (P1), search globale (P2), condition de sortie temporelle (2 semaines d'usage quotidien).
 
 ### Backend
 
