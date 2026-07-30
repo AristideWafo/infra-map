@@ -54,6 +54,7 @@ beforeEach(() => {
     isError: false,
     errorMessage: '',
     lastRefresh: null,
+    cacheAgeSeconds: null,
   })
   vi.stubGlobal(
     'fetch',
@@ -101,5 +102,31 @@ describe('App', () => {
     await waitFor(() => {
       expect(screen.getByText(/Aucune donnée — Failed to fetch/)).toBeInTheDocument()
     })
+  })
+
+  test('signale les données périmées via X-Cache-Age-Seconds (200 OK)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify(mockTree), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', 'X-Cache-Age-Seconds': '87' },
+          }),
+        ),
+      ),
+    )
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Source indisponible — données périmées \(87s\)/)).toBeInTheDocument()
+    })
+  })
+
+  test('pas de bandeau périmé quand le cache est frais', async () => {
+    render(<App />)
+
+    await waitFor(() => screen.getByText('cluster-production'))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })

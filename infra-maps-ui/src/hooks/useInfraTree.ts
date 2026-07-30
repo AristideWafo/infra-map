@@ -15,12 +15,12 @@ export function useInfraTree() {
 
     async function load() {
       try {
-        const tree = await fetchTree({
+        const { tree, cacheAgeSeconds } = await fetchTree({
           namespace: filterNamespace,
           status: filterStatus,
           tag: filterTag,
         })
-        if (!cancelled) setTree(tree)
+        if (!cancelled) setTree(tree, cacheAgeSeconds)
       } catch (err: unknown) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Unknown error')
       }
