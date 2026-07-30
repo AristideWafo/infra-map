@@ -16,6 +16,14 @@ jobs:
       api_release_created: ${{ steps.release-please.outputs['infra-maps-api--release_created'] }}
       api_tag: ${{ steps.release-please.outputs['infra-maps-api--tag_name'] }}
     steps:
+      - name: Ensure release-please labels exist
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+        run: |
+          for label in "autorelease: pending" "autorelease: tagged" "autorelease: failed" "autorelease: snapshot"; do
+            gh label create "$label" --repo "${{ github.repository }}" --color "ededed" 2>/dev/null || true
+          done
+
       - uses: googleapis/release-please-action@v4
         id: release-please
         with:
