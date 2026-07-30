@@ -193,8 +193,9 @@ Fait depuis (2026-07-30) : Dockerfile multi-stage distroless ✅, job GHCR sur r
 - URL state (`?node=<id>`) partageable, restaurée au chargement.
 - Keyboard navigation : Tab/Entrée déjà natifs sur les `NodeCard` (`role="button" tabIndex={0}` + handler Espace/Entrée), Échap ferme le SidePanel.
 
+**Livré depuis (2026-07-30) :** Timeout **par scraper** — `PROMETHEUS_SCRAPER_TIMEOUT` / `K8S_SCRAPER_TIMEOUT` / `DOCKER_SCRAPER_TIMEOUT` surchargent `SCRAPER_TIMEOUT` par source ; chaque goroutine de scrape reçoit désormais son propre `context.WithTimeout`, une source lente n'affame plus les autres.
+
 **Restant :**
-- Timeout **par scraper** — `SCRAPER_TIMEOUT` est aujourd'hui global (un seul timeout pour tout le cycle), pas configurable source par source.
 - Lazy loading sous-arbres — non fait ; l'arbre complet est chargé en un seul `/tree`. Reporté : aucune preuve de besoin à l'échelle actuelle (mock/petits clusters), un vrai cluster >100 pods trancherait.
 - Condition de sortie temporelle (1 mois sans incident en prod/staging) — non applicable sans déploiement client réel.
 

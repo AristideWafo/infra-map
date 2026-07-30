@@ -101,6 +101,38 @@ func TestBuildTree_HierarchyAndStatusPropagation(t *testing.T) {
 	assert.Equal(t, models.StatusCritical, cluster.Status)
 }
 
+type deadlineScraper struct {
+	name     string
+	deadline time.Time
+}
+
+func (d *deadlineScraper) Name() string  { return d.name }
+func (d *deadlineScraper) Health() error { return nil }
+func (d *deadlineScraper) Scrape(ctx context.Context) ([]*models.UnifiedNode, error) {
+	d.deadline, _ = ctx.Deadline()
+	return nil, nil
+}
+func (d *deadlineScraper) Connections(_ context.Context) ([]*models.Connection, error) {
+	return nil, nil
+}
+
+func TestScrapeAll_PerScraperTimeoutOverridesDefault(t *testing.T) {
+	slow := &deadlineScraper{name: "kubernetes"}
+	fast := &deadlineScraper{name: "prometheus"}
+	orch, _ := newOrch(slow, fast)
+	orch.SetTimeout(5 * time.Second)
+	orch.SetScraperTimeouts(map[string]time.Duration{"kubernetes": 60 * time.Second})
+
+	start := time.Now()
+	orch.ScrapeAll(context.Background())
+
+	slowBudget := slow.deadline.Sub(start)
+	fastBudget := fast.deadline.Sub(start)
+
+	assert.Greater(t, slowBudget, 30*time.Second, "kubernetes override must apply its own longer budget")
+	assert.Less(t, fastBudget, 10*time.Second, "prometheus keeps the default budget, unaffected by kubernetes override")
+}
+
 func TestMockPrometheus_ScrapeIsRealCodePath(t *testing.T) {
 	m := NewMockPrometheus()
 	nodes, err := m.Scrape(context.Background())

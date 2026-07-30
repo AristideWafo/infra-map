@@ -33,6 +33,16 @@ func TestLoad_EnvOverrides(t *testing.T) {
 	assert.False(t, cfg.MockEnabled)
 }
 
+func TestLoad_PerScraperTimeouts(t *testing.T) {
+	t.Setenv("K8S_SCRAPER_TIMEOUT", "45s")
+
+	cfg := Load(discard())
+
+	assert.Equal(t, 45*time.Second, cfg.ScraperTimeouts["kubernetes"])
+	assert.NotContains(t, cfg.ScraperTimeouts, "prometheus")
+	assert.NotContains(t, cfg.ScraperTimeouts, "docker")
+}
+
 func TestLoad_InvalidValuesFallBack(t *testing.T) {
 	t.Setenv("SCRAPE_INTERVAL", "not-a-duration")
 	t.Setenv("K8S_ENABLED", "not-a-bool")

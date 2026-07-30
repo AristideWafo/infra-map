@@ -25,19 +25,43 @@ const (
 // Orchestrator fait tourner tous les scrapers en parallèle à intervalle fixe,
 // assemble l'arbre, applique le layout et publie dans le cache.
 type Orchestrator struct {
-	scrapers []Scraper
-	cache    *cache.Memory
-	layout   *layout.Engine
-	interval time.Duration
-	timeout  time.Duration
-	log      *slog.Logger
+	scrapers        []Scraper
+	cache           *cache.Memory
+	layout          *layout.Engine
+	interval        time.Duration
+	timeout         time.Duration
+	scraperTimeouts map[string]time.Duration
+	log             *slog.Logger
 }
 
-// SetTimeout fixe le timeout d'un cycle de scrape (défaut : interval - 5s).
+// SetTimeout fixe le timeout par défaut d'un scraper (défaut : interval - 5s).
 func (o *Orchestrator) SetTimeout(d time.Duration) {
 	if d > 0 {
 		o.timeout = d
 	}
+}
+
+// SetScraperTimeouts surcharge le timeout par défaut pour des scrapers
+// spécifiques (clé = Scraper.Name()). Une source lente (ex: K8s sur un
+// gros cluster) n'affame plus les autres et vice-versa.
+func (o *Orchestrator) SetScraperTimeouts(timeouts map[string]time.Duration) {
+	o.scraperTimeouts = timeouts
+}
+
+// timeoutFor retourne le timeout effectif d'un scraper : override par nom si
+// présent, sinon le défaut global.
+func (o *Orchestrator) timeoutFor(name string) time.Duration {
+	if d, ok := o.scraperTimeouts[name]; ok && d > 0 {
+		return d
+	}
+	timeout := o.timeout
+	if timeout <= 0 {
+		timeout = o.interval - 5*time.Second
+	}
+	if timeout <= 0 {
+		timeout = o.interval
+	}
+	return timeout
 }
 
 func NewOrchestrator(scrapers []Scraper, c *cache.Memory, l *layout.Engine, interval time.Duration, log *slog.Logger) *Orchestrator {
@@ -68,16 +92,6 @@ func (o *Orchestrator) Run(ctx context.Context) {
 // ScrapeAll exécute un cycle complet avec un timeout inférieur à l'intervalle.
 // L'erreur d'un scraper est loguée et ignorée : mode dégradé, jamais bloquant.
 func (o *Orchestrator) ScrapeAll(ctx context.Context) {
-	timeout := o.timeout
-	if timeout <= 0 {
-		timeout = o.interval - 5*time.Second
-	}
-	if timeout <= 0 {
-		timeout = o.interval
-	}
-	scrapeCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
 	start := time.Now()
 
 	type result struct {
@@ -90,6 +104,8 @@ func (o *Orchestrator) ScrapeAll(ctx context.Context) {
 	results := make(chan result, len(o.scrapers))
 	for _, s := range o.scrapers {
 		go func(sc Scraper) {
+			scrapeCtx, cancel := context.WithTimeout(ctx, o.timeoutFor(sc.Name()))
+			defer cancel()
 			nodes, err := sc.Scrape(scrapeCtx)
 			conns, _ := sc.Connections(scrapeCtx) // erreur connexions non fatale
 			results <- result{name: sc.Name(), nodes: nodes, conns: conns, err: err}
@@ -110,7 +126,9 @@ func (o *Orchestrator) ScrapeAll(ctx context.Context) {
 
 	for _, s := range o.scrapers {
 		if e, ok := s.(Enricher); ok {
-			e.Enrich(scrapeCtx, allNodes)
+			enrichCtx, cancel := context.WithTimeout(ctx, o.timeoutFor(s.Name()))
+			e.Enrich(enrichCtx, allNodes)
+			cancel()
 		}
 	}
 

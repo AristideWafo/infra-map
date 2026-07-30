@@ -349,6 +349,10 @@ helm install infra-maps /tmp/infra-maps-1.0.0.tgz \
 | `LOKI_URL` | `` | Non | URL Loki. Vide = désactivé. |
 | `LOKI_MAX_LINES` | `100` | Non | Limite logs par requête proxy |
 | `SCRAPE_INTERVAL` | `30s` | Non | Intervalle scraping (format Go duration) |
+| `SCRAPER_TIMEOUT` | `interval - 5s` | Non | Timeout par défaut d'un scraper si aucune surcharge spécifique |
+| `PROMETHEUS_SCRAPER_TIMEOUT` | `SCRAPER_TIMEOUT` | Non | Timeout dédié au scraper Prometheus |
+| `K8S_SCRAPER_TIMEOUT` | `SCRAPER_TIMEOUT` | Non | Timeout dédié au scraper Kubernetes |
+| `DOCKER_SCRAPER_TIMEOUT` | `SCRAPER_TIMEOUT` | Non | Timeout dédié au scraper Docker |
 | `CACHE_TTL` | `30s` | Non | TTL cache mémoire |
 | `AUTH_ENABLED` | `true` | Non | `false` pour dev local uniquement |
 | `LOG_LEVEL` | `info` | Non | `debug`, `info`, `warn`, `error` |

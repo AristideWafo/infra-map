@@ -19,8 +19,11 @@ type Config struct {
 	LokiURL        string
 	ScrapeInterval time.Duration
 	ScraperTimeout time.Duration
-	CacheTTL       time.Duration
-	CORSOrigin     string
+	// ScraperTimeouts surcharge ScraperTimeout par source (clé = Scraper.Name()),
+	// ex. PROMETHEUS_SCRAPER_TIMEOUT, K8S_SCRAPER_TIMEOUT, DOCKER_SCRAPER_TIMEOUT.
+	ScraperTimeouts map[string]time.Duration
+	CacheTTL        time.Duration
+	CORSOrigin      string
 	// MockEnabled force le scraper mocké (dev sans infra). Activé
 	// automatiquement si PROMETHEUS_URL est vide.
 	MockEnabled bool
@@ -45,6 +48,17 @@ func Load(log *slog.Logger) Config {
 	if cfg.PrometheusURL == "" && !cfg.MockEnabled {
 		log.Warn("PROMETHEUS_URL empty — falling back to mock scraper")
 		cfg.MockEnabled = true
+	}
+	cfg.ScraperTimeouts = map[string]time.Duration{}
+	for name, key := range map[string]string{
+		"prometheus": "PROMETHEUS_SCRAPER_TIMEOUT",
+		"kubernetes": "K8S_SCRAPER_TIMEOUT",
+		"docker":     "DOCKER_SCRAPER_TIMEOUT",
+	} {
+		if os.Getenv(key) == "" {
+			continue
+		}
+		cfg.ScraperTimeouts[name] = duration(key, 0, log)
 	}
 	return cfg
 }
