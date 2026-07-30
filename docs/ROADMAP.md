@@ -25,10 +25,10 @@ Rien de grave — c'est normal à ce stade — mais la doc ne doit pas raconter 
 
 ```
 Phase 0   ✅  MVP Grid 2D + API Go (arbre mocké de bout en bout, testé)
-Phase 0.5 🔄  Fondations CI/CD + tests unitaires + releases GitHub automatiques
-Phase 1   ⏳  Scrapers réels (Prometheus + K8s + Docker + VMs)
-Phase 2   ⏳  Utilisabilité quotidienne (Loki + WS alertes + Helm)
-Phase 3   ⏳  Robustesse production (pagination, multi-mode, URL state)
+Phase 0.5 ✅  Fondations CI/CD + tests unitaires + releases GitHub automatiques (reste : protection de branche — manuel)
+Phase 1   🔄  Scrapers réels — code livré, validation cluster réel restante
+Phase 2   🔄  Utilisabilité quotidienne — P0+P1+P2 livrés (Loki, WS alertes, Helm, breadcrumb, search)
+Phase 3   🔄  Robustesse production — stale-serving, timeouts, URL state, Échap livrés
 Phase 4   ⏳  Vue 3D Maps — Three.js [CONDITIONNEL]
 Phase 5   ⏳  Actions production [PRUDENCE — décision future]
 ```
@@ -70,10 +70,9 @@ Phase 5   ⏳  Actions production [PRUDENCE — décision future]
 
 | Tâche | Priorité | Notes |
 |-------|----------|-------|
-| Activer la protection de branche `main` : `backend-ci` + `frontend-ci` en required status checks, `Allow auto-merge` activé sur le repo | 🔴 P0 | Sans ça, l'auto-merge de la PR de release ne peut pas être bloqué par des tests rouges — condition de sécurité du pipeline |
-| Dockerfile multi-stage `infra-maps-api` (scratch/distroless) | 🟡 P1 | Prérequis pour publier une image à chaque release (déplacé depuis Phase 2 si on veut des images versionnées dès maintenant) |
-| Job `docker build & push GHCR` déclenché par `release-please` (`release_created == true`) | 🟡 P1 | Tag image = tag de release (jamais `:latest` en prod) |
-| Adopter Conventional Commits dans les commits existants et futurs | 🔴 P0 | release-please ne détecte rien sans ça |
+| Activer la protection de branche `prod` : check `Lint, test, build` (backend + frontend) requis, `Allow auto-merge` sur le repo | 🔴 P0 | **Seule étape manuelle restante** — `gh auth login` puis `gh api -X PUT repos/AristideWafo/infra-map/branches/prod/protection ...` (ou via Settings GitHub) |
+
+Fait depuis (2026-07-30) : Dockerfile multi-stage distroless ✅, job GHCR sur release ✅ (tag image = tag release), Conventional Commits adoptés sur tous les commits ✅, workflows repointés sur `prod` (ils visaient `main` qui n'existe pas) ✅. Les PRs release-please s'ouvrent bien à chaque push.
 
 ### Condition de sortie ✅
 
