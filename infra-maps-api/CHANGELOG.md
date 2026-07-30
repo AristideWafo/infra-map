@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/AristideWafo/infra-map/compare/infra-maps-api-v0.3.0...infra-maps-api-v0.4.0) (2026-07-30)
+
+
+### Features
+
+* multi-mode scraper tests + stale-data visual signal on 200 responses ([#13](https://github.com/AristideWafo/infra-map/issues/13)) ([e38409f](https://github.com/AristideWafo/infra-map/commit/e38409f40d5bdbc2865e3bbab7d42abf6fbf5124))
+
 ## [0.3.0](https://github.com/AristideWafo/infra-map/compare/infra-maps-api-v0.2.0...infra-maps-api-v0.3.0) (2026-07-30)
 
 
