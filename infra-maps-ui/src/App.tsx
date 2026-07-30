@@ -12,6 +12,11 @@ import { Breadcrumb } from './components/Toolbar/Breadcrumb'
 import { SearchInput } from './components/Toolbar/SearchInput'
 import './App.css'
 
+// Au-delà du CACHE_TTL backend (30s défaut), l'arbre servi est périmé —
+// le scraper n'a pas rafraîchi le cache mais les données restent affichées
+// (dégradation gracieuse côté API, signalée ici).
+const STALE_THRESHOLD_SECONDS = 30
+
 function App() {
   useInfraTree()
   useConnections()
@@ -27,6 +32,7 @@ function App() {
   const selectedNodeId = useInfraStore((s) => s.selectedNodeId)
   const selectNode = useInfraStore((s) => s.selectNode)
   const lastRefresh = useInfraStore((s) => s.lastRefresh)
+  const cacheAgeSeconds = useInfraStore((s) => s.cacheAgeSeconds)
   const filterNamespace = useInfraStore((s) => s.filterNamespace)
   const filterStatus = useInfraStore((s) => s.filterStatus)
   const filterTag = useInfraStore((s) => s.filterTag)
@@ -37,6 +43,8 @@ function App() {
   const selectedNode = selectedNodeId ? findNodeById(tree, selectedNodeId) : null
   const breadcrumbPath = selectedNodeId ? getAncestors(tree, selectedNodeId) : []
   const alertingIds = new Set(alerts.map((a) => a.nodeId))
+  const isStale =
+    cacheAgeSeconds !== null && cacheAgeSeconds > STALE_THRESHOLD_SECONDS
 
   // URL partageable : ?node=<id> suit la sélection
   useEffect(() => {
@@ -95,8 +103,13 @@ function App() {
           ⚠ Rafraîchissement en échec — données périmées affichées ({errorMessage})
         </div>
       )}
+      {!isError && isStale && (
+        <div className="stale-banner" role="alert">
+          ⚠ Source indisponible — données périmées ({cacheAgeSeconds}s)
+        </div>
+      )}
 
-      <main className="app__main">
+      <main className={`app__main ${isStale ? 'app__main--stale' : ''}`}>
         <GridView
           tree={tree}
           connections={connections}

@@ -16,8 +16,9 @@ interface InfraState {
   isError: boolean
   errorMessage: string
   lastRefresh: Date | null
+  cacheAgeSeconds: number | null
 
-  setTree: (tree: UnifiedNode) => void
+  setTree: (tree: UnifiedNode, cacheAgeSeconds: number | null) => void
   setConnections: (connections: Connection[]) => void
   addAlert: (alert: Alert) => void
   removeAlert: (id: string) => void
@@ -45,8 +46,10 @@ export const useInfraStore = create<InfraState>((set) => ({
   isError: false,
   errorMessage: '',
   lastRefresh: null,
+  cacheAgeSeconds: null,
 
-  setTree: (tree) => set({ tree, isLoading: false, isError: false, lastRefresh: new Date() }),
+  setTree: (tree, cacheAgeSeconds) =>
+    set({ tree, isLoading: false, isError: false, lastRefresh: new Date(), cacheAgeSeconds }),
   setConnections: (connections) => set({ connections }),
   addAlert: (alert) => set((s) => ({ alerts: [...s.alerts, alert] })),
   removeAlert: (id) => set((s) => ({ alerts: s.alerts.filter((a) => a.id !== id) })),
