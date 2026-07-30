@@ -59,6 +59,16 @@ func buildScrapers(cfg config.Config, log *slog.Logger) []scraper.Scraper {
 	} else {
 		scrapers = append(scrapers, prom)
 	}
+
+	if cfg.K8sEnabled {
+		k8s, err := scraper.NewKubernetes(cfg.K8sInCluster, cfg.K8sKubeconfig)
+		if err != nil {
+			log.Error("kubernetes scraper init failed", "error", err)
+			scrapers = append(scrapers, scraper.NewNoop("kubernetes"))
+		} else {
+			scrapers = append(scrapers, k8s)
+		}
+	}
 	return scrapers
 }
 
