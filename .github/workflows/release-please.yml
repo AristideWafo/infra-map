@@ -27,9 +27,14 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: release-please
         with:
+          # GITHUB_TOKEN ne déclenche pas les workflows pull_request sur les
+          # branches poussées par le bot — les checks requis ne tournent alors
+          # jamais et l'auto-merge reste bloqué. Fournir un PAT (secret
+          # RELEASE_PLEASE_TOKEN, scope repo) rend le train de release
+          # entièrement autonome. Fallback : github.token.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
   # Publie l'image versionnée sur GHCR quand une release backend est créée.
   # Tag image = tag de release. Jamais de :latest en prod.
