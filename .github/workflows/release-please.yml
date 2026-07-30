@@ -39,12 +39,12 @@ jobs:
       # is what triggers the tag + GitHub Release + CHANGELOG update.
       - name: Enable auto-merge on pending release PRs
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
         run: |
           gh pr list --repo "${{ github.repository }}" \
             --search 'label:"autorelease: pending"' --state open --json number \
             -q '.[].number' | while read -r pr; do
-            gh pr merge "$pr" --squash --auto --repo "${{ github.repository }}"
+            gh pr merge "$pr" --squash --auto --repo "${{ github.repository }}" || true
           done
 
   # Publie l'image versionnée sur GHCR quand une release backend est créée.
