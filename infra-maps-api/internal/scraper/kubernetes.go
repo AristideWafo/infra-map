@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aristidewafo/infra-maps-api/internal/models"
+	"github.com/aristidewafo/infra-maps-api/internal/resolver"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -125,7 +126,7 @@ func (k *Kubernetes) Scrape(ctx context.Context) ([]*models.UnifiedNode, error) 
 }
 
 func (k *Kubernetes) Connections(ctx context.Context) ([]*models.Connection, error) {
-	return nil, nil // Connection resolver — commit dédié
+	return resolver.K8sConnections(ctx, k.client)
 }
 
 func nodeStatus(n *corev1.Node) models.NodeStatus {
