@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/AristideWafo/infra-map/compare/infra-maps-ui-v1.1.0...infra-maps-ui-v1.2.0) (2026-07-30)
+
+
+### Features
+
+* **infra-maps-ui:** per-zone empty state per DESIGN_SYSTEM.md ([#16](https://github.com/AristideWafo/infra-map/issues/16)) ([119ec6d](https://github.com/AristideWafo/infra-map/commit/119ec6d8c013a9b7b5734945c17dfc85eb5c5830))
+* multi-mode scraper tests + stale-data visual signal on 200 responses ([#13](https://github.com/AristideWafo/infra-map/issues/13)) ([e38409f](https://github.com/AristideWafo/infra-map/commit/e38409f40d5bdbc2865e3bbab7d42abf6fbf5124))
+
 ## [1.1.0](https://github.com/AristideWafo/infra-map/compare/infra-maps-ui-v1.0.0...infra-maps-ui-v1.1.0) (2026-07-30)
 
 
