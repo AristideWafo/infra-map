@@ -18,6 +18,7 @@ type Config struct {
 	DockerSocket   string
 	LokiURL        string
 	ScrapeInterval time.Duration
+	ScraperTimeout time.Duration
 	CacheTTL       time.Duration
 	CORSOrigin     string
 	// MockEnabled force le scraper mocké (dev sans infra). Activé
@@ -36,6 +37,7 @@ func Load(log *slog.Logger) Config {
 		DockerSocket:   str("DOCKER_SOCKET", "/var/run/docker.sock"),
 		LokiURL:        str("LOKI_URL", ""),
 		ScrapeInterval: duration("SCRAPE_INTERVAL", 30*time.Second, log),
+		ScraperTimeout: duration("SCRAPER_TIMEOUT", 0, log),
 		CacheTTL:       duration("CACHE_TTL", 30*time.Second, log),
 		CORSOrigin:     str("CORS_ORIGIN", "*"),
 		MockEnabled:    boolean("MOCK_ENABLED", false, log),

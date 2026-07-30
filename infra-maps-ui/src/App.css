@@ -453,3 +453,12 @@
 .log-line__msg {
   word-break: break-all;
 }
+
+/* Bandeau données périmées */
+.stale-banner {
+  background: var(--status-warning-bg);
+  border-bottom: var(--border-width) solid var(--status-warning);
+  color: var(--status-warning);
+  font-size: var(--text-sm);
+  padding: 6px var(--node-padding);
+}

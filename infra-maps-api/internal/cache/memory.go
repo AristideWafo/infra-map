@@ -51,3 +51,16 @@ func (m *Memory) Age(key string) int {
 	}
 	return int(m.now().Sub(it.storedAt).Seconds())
 }
+
+// GetStale retourne la valeur même expirée, avec son âge en secondes.
+// Utilisé pour la dégradation gracieuse : mieux vaut des données périmées
+// signalées qu'un 503 quand un scraper est en panne.
+func (m *Memory) GetStale(key string) (interface{}, int, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	it, ok := m.items[key]
+	if !ok {
+		return nil, -1, false
+	}
+	return it.value, int(m.now().Sub(it.storedAt).Seconds()), true
+}

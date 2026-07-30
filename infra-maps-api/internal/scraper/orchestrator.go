@@ -23,7 +23,15 @@ type Orchestrator struct {
 	cache    *cache.Memory
 	layout   *layout.Engine
 	interval time.Duration
+	timeout  time.Duration
 	log      *slog.Logger
+}
+
+// SetTimeout fixe le timeout d'un cycle de scrape (défaut : interval - 5s).
+func (o *Orchestrator) SetTimeout(d time.Duration) {
+	if d > 0 {
+		o.timeout = d
+	}
 }
 
 func NewOrchestrator(scrapers []Scraper, c *cache.Memory, l *layout.Engine, interval time.Duration, log *slog.Logger) *Orchestrator {
@@ -54,7 +62,10 @@ func (o *Orchestrator) Run(ctx context.Context) {
 // ScrapeAll exécute un cycle complet avec un timeout inférieur à l'intervalle.
 // L'erreur d'un scraper est loguée et ignorée : mode dégradé, jamais bloquant.
 func (o *Orchestrator) ScrapeAll(ctx context.Context) {
-	timeout := o.interval - 5*time.Second
+	timeout := o.timeout
+	if timeout <= 0 {
+		timeout = o.interval - 5*time.Second
+	}
 	if timeout <= 0 {
 		timeout = o.interval
 	}

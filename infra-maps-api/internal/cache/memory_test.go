@@ -63,3 +63,23 @@ func TestMemory_ConcurrentAccess(t *testing.T) {
 	}
 	<-done
 }
+
+func TestMemory_GetStaleServesExpiredData(t *testing.T) {
+	c := New(30 * time.Second)
+	current := time.Now()
+	c.now = func() time.Time { return current }
+
+	c.Set("tree", "value")
+	current = current.Add(120 * time.Second)
+
+	_, ok := c.Get("tree")
+	assert.False(t, ok) // Get respecte le TTL
+
+	val, age, ok := c.GetStale("tree")
+	assert.True(t, ok) // GetStale sert quand même
+	assert.Equal(t, "value", val)
+	assert.Equal(t, 120, age)
+
+	_, _, ok = c.GetStale("absent")
+	assert.False(t, ok)
+}

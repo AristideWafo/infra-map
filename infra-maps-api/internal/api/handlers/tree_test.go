@@ -176,3 +176,19 @@ func TestGetConnections_FilterByFromID(t *testing.T) {
 	assert.Equal(t, 1, body.Total)
 	assert.Equal(t, "a-b", body.Connections[0].ID)
 }
+
+func TestGetTree_ServesStaleDataAfterTTL(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c := cache.New(1 * time.Nanosecond) // expire immédiatement
+	c.Set(scraper.CacheKeyTree, fixtureTree())
+	time.Sleep(time.Millisecond)
+
+	h := NewTreeHandler(c)
+	r := gin.New()
+	r.GET("/api/v1/tree", h.GetTree)
+
+	w := get(r, "/api/v1/tree")
+	// Données périmées servies quand même, avec l'âge exposé
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.NotEmpty(t, w.Header().Get("X-Cache-Age-Seconds"))
+}

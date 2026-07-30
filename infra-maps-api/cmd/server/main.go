@@ -25,6 +25,7 @@ func main() {
 	engine := layout.NewEngine()
 	scrapers, metricsProvider := buildScrapers(cfg, log)
 	orch := scraper.NewOrchestrator(scrapers, c, engine, cfg.ScrapeInterval, log)
+	orch.SetTimeout(cfg.ScraperTimeout)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

@@ -18,8 +18,11 @@ type TreeHandler struct {
 
 func NewTreeHandler(c *cache.Memory) *TreeHandler { return &TreeHandler{Cache: c} }
 
+// getCachedTree sert l'arbre même expiré (dégradation gracieuse) : un scraper
+// en panne ne doit pas faire disparaître la carte. L'âge est exposé via le
+// header X-Cache-Age-Seconds ; 503 uniquement si le cache n'a jamais été rempli.
 func (h *TreeHandler) getCachedTree(c *gin.Context) (*models.UnifiedNode, bool) {
-	val, ok := h.Cache.Get(scraper.CacheKeyTree)
+	val, age, ok := h.Cache.GetStale(scraper.CacheKeyTree)
 	if !ok {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": "Cache not ready, scrapers still initializing",
@@ -32,6 +35,7 @@ func (h *TreeHandler) getCachedTree(c *gin.Context) (*models.UnifiedNode, bool) 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error", "code": "ERR_INTERNAL"})
 		return nil, false
 	}
+	c.Header("X-Cache-Age-Seconds", strconv.Itoa(age))
 	return tree, true
 }
 

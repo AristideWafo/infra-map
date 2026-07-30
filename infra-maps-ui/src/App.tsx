@@ -57,6 +57,12 @@ function App() {
         )}
       </header>
 
+      {isError && tree && (
+        <div className="stale-banner" role="alert">
+          ⚠ Rafraîchissement en échec — données périmées affichées ({errorMessage})
+        </div>
+      )}
+
       <main className="app__main">
         <GridView
           tree={tree}
