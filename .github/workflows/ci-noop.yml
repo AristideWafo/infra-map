@@ -1,0 +1,21 @@
+# Le check requis "Lint, test, build" est rapporté par backend-ci / frontend-ci,
+# tous deux path-filtrés. Sans ce workflow, une PR ne touchant ni infra-maps-api
+# ni infra-maps-ui (docs, helm, config repo) n'aurait jamais son check requis
+# et resterait bloquée. Ce job no-op porte le même nom et passe immédiatement.
+name: CI (no-op for unaffected paths)
+
+on:
+  pull_request:
+    branches: [prod]
+    paths-ignore:
+      - 'infra-maps-api/**'
+      - 'infra-maps-ui/**'
+      - '.github/workflows/backend-ci.yml'
+      - '.github/workflows/frontend-ci.yml'
+
+jobs:
+  noop:
+    name: Lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No code paths affected — required check satisfied."
