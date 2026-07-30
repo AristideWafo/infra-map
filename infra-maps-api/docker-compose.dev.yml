@@ -1,0 +1,29 @@
+# Stack de dev : Prometheus + node_exporter + infra-maps-api branché dessus.
+# Usage : docker compose -f docker-compose.dev.yml up --build
+# Le front (pnpm dev) pointe sur http://localhost:8080 par défaut.
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./dev/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    ports:
+      - "9100:9100"
+
+  api:
+    build: .
+    environment:
+      PROMETHEUS_URL: http://prometheus:9090
+      K8S_ENABLED: "false"
+      DOCKER_ENABLED: "false"
+      CORS_ORIGIN: "*"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - prometheus

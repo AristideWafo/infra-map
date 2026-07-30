@@ -81,11 +81,20 @@ Phase 5   ⏳  Actions production [PRUDENCE — décision future]
 
 ---
 
-## Phase 1 — Scrapers Réels
-
-**Estimé :** 3 semaines
+## Phase 1 — 🔄 Scrapers Réels (code livré le 2026-07-30 — validation sur cluster réel restante)
 
 **Objectif :** InfraMaps affiche les vraies données de mon infrastructure.
+
+**Livré :**
+- Scraper Prometheus réel : discovery VMs via `/api/v1/targets`, CPU/RAM/Disk en PromQL, islands par label `datacenter`, target down → critical, métriques absentes → unknown. Testé avec fake `promAPI`.
+- Scraper Kubernetes (client-go) : cluster → nodes → pods, CrashLoopBackOff → critical, restarts → warning, pods non schedulés rattachés au cluster. Testé avec fake clientset.
+- Scraper Docker : containers + groupes compose, mapping état → statut. Testé avec fake API.
+- Connection Resolver : Service → Pod via Endpoints (`internal/resolver`).
+- Config env complète (`internal/config`), fallback mock si `PROMETHEUS_URL` vide, sources désactivables.
+- Front : FilterBar namespace/statut/tag branchée (filtrage serveur), ConnectionSVG (lignes pointillées), hooks connections/tags.
+- `docker-compose.dev.yml` (Prometheus + node_exporter + api).
+
+**Restant pour clore :** brancher sur un cluster réel (ou kind) et valider la condition de sortie ; métriques CPU/RAM des pods K8s via PromQL `kube_state_metrics` (aujourd'hui topologie + statuts seulement).
 
 ### Backend
 
