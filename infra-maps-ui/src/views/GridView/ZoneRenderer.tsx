@@ -1,6 +1,7 @@
 import type { UnifiedNode } from '../../types/infra'
 import { StatusBadge } from '../../components/shared/StatusBadge'
 import { NodeCard } from './NodeCard'
+import { EmptyState } from '../../components/shared/EmptyState'
 
 interface ZoneRendererProps {
   zone: UnifiedNode
@@ -23,24 +24,28 @@ export function ZoneRenderer({ zone, selectedNodeId, alertingIds, onSelect }: Zo
         {zone.pods !== undefined && <span className="zone__meta">{zone.pods} pods</span>}
       </header>
       <div className="zone__grid">
-        {children.map((child) =>
-          isLeaf(child) ? (
-            <NodeCard
-              key={child.id}
-              node={child}
-              isSelected={selectedNodeId === child.id}
-              isAlerting={alertingIds.has(child.id)}
-              onClick={onSelect}
-            />
-          ) : (
-            <ZoneRenderer
-              key={child.id}
-              zone={child}
-              selectedNodeId={selectedNodeId}
-              alertingIds={alertingIds}
-              onSelect={onSelect}
-            />
-          ),
+        {children.length === 0 ? (
+          <EmptyState message={`Aucune donnée — vérifier ${zone.source}`} />
+        ) : (
+          children.map((child) =>
+            isLeaf(child) ? (
+              <NodeCard
+                key={child.id}
+                node={child}
+                isSelected={selectedNodeId === child.id}
+                isAlerting={alertingIds.has(child.id)}
+                onClick={onSelect}
+              />
+            ) : (
+              <ZoneRenderer
+                key={child.id}
+                zone={child}
+                selectedNodeId={selectedNodeId}
+                alertingIds={alertingIds}
+                onSelect={onSelect}
+              />
+            ),
+          )
         )}
       </div>
     </section>
