@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/AristideWafo/infra-map/compare/infra-maps-api-v0.4.0...infra-maps-api-v0.5.0) (2026-07-30)
+
+
+### Features
+
+* **infra-maps-api:** per-scraper timeout override ([#20](https://github.com/AristideWafo/infra-map/issues/20)) ([bba50ec](https://github.com/AristideWafo/infra-map/commit/bba50ec6c8888b6bbcb35875cb599f9250c76cbe))
+* **infra-maps-api:** resolve Ingress → Service connections ([#22](https://github.com/AristideWafo/infra-map/issues/22)) ([90b8521](https://github.com/AristideWafo/infra-map/commit/90b8521f992f730d6fb00e209870fe7a84b201c9))
+
 ## [0.4.0](https://github.com/AristideWafo/infra-map/compare/infra-maps-api-v0.3.0...infra-maps-api-v0.4.0) (2026-07-30)
 
 
