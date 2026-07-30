@@ -103,7 +103,7 @@ Fait depuis (2026-07-30) : Dockerfile multi-stage distroless ✅, job GHCR sur r
 | VM scraper (Prometheus `/api/v1/targets` + node_exporter) | 🔴 P0 | Moyenne | ✅ |
 | K8s API scraper — nodes, pods, namespaces (client-go) | 🔴 P0 | Haute | ✅ |
 | Docker scraper — containers standalone + réseaux | 🟡 P1 | Moyenne | ✅ |
-| Connection Resolver (K8s Services + Endpoints) | 🔴 P0 | Haute | ✅ (Ingress non couvert) |
+| Connection Resolver (K8s Services + Endpoints + Ingress) | 🔴 P0 | Haute | ✅ |
 | Layout Engine — positions déterministes (Grid 2D) | 🔴 P0 | Haute | ✅ |
 | Health endpoint réel (`/api/v1/health`) | 🟡 P1 | Faible | ✅ |
 
