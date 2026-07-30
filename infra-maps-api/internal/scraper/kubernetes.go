@@ -126,7 +126,15 @@ func (k *Kubernetes) Scrape(ctx context.Context) ([]*models.UnifiedNode, error) 
 }
 
 func (k *Kubernetes) Connections(ctx context.Context) ([]*models.Connection, error) {
-	return resolver.K8sConnections(ctx, k.client)
+	svcConns, err := resolver.K8sConnections(ctx, k.client)
+	if err != nil {
+		return nil, err
+	}
+	ingressConns, err := resolver.IngressConnections(ctx, k.client)
+	if err != nil {
+		return nil, err
+	}
+	return append(svcConns, ingressConns...), nil
 }
 
 func nodeStatus(n *corev1.Node) models.NodeStatus {
