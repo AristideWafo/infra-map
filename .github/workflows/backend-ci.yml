@@ -1,0 +1,45 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra-maps-api/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infra-maps-api/**'
+      - '.github/workflows/backend-ci.yml'
+
+defaults:
+  run:
+    working-directory: infra-maps-api
+
+jobs:
+  test:
+    name: Lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: infra-maps-api/go.mod
+          cache-dependency-path: infra-maps-api/go.sum
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test (race)
+        run: go test ./... -race
+
+      - name: Enforce coverage floor on internal/ (business logic, not cmd/ wiring)
+        run: |
+          go test ./internal/... -coverprofile=coverage.out
+          total=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | tr -d '%')
+          echo "internal/ coverage: ${total}%"
+          awk -v t="$total" 'BEGIN { if (t+0 < 60) { print "Coverage below 60% floor"; exit 1 } }'
+
+      - name: go build
+        run: go build ./...
