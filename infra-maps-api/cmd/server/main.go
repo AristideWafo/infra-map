@@ -69,6 +69,16 @@ func buildScrapers(cfg config.Config, log *slog.Logger) []scraper.Scraper {
 			scrapers = append(scrapers, k8s)
 		}
 	}
+
+	if cfg.DockerEnabled {
+		docker, err := scraper.NewDocker(cfg.DockerSocket)
+		if err != nil {
+			log.Error("docker scraper init failed", "error", err)
+			scrapers = append(scrapers, scraper.NewNoop("docker"))
+		} else {
+			scrapers = append(scrapers, docker)
+		}
+	}
 	return scrapers
 }
 
