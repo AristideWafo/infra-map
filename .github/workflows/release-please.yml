@@ -31,22 +31,6 @@ jobs:
           manifest-file: .release-please-manifest.json
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
-      # release-please opens/updates a "chore: release X" PR (labeled
-      # "autorelease: pending") that accumulates Conventional Commits since
-      # the last tag. Auto-merging it is what makes releases fully automatic:
-      # once backend-ci/frontend-ci are required status checks (branch
-      # protection), this PR can only merge after tests pass, and merging it
-      # is what triggers the tag + GitHub Release + CHANGELOG update.
-      - name: Enable auto-merge on pending release PRs
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
-        run: |
-          gh pr list --repo "${{ github.repository }}" \
-            --search 'label:"autorelease: pending"' --state open --json number \
-            -q '.[].number' | while read -r pr; do
-            gh pr merge "$pr" --squash --auto --repo "${{ github.repository }}" || true
-          done
-
   # Publie l'image versionnée sur GHCR quand une release backend est créée.
   # Tag image = tag de release. Jamais de :latest en prod.
   docker-publish:
