@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.0](https://github.com/AristideWafo/infra-map/compare/infra-maps-api-v0.2.0...infra-maps-api-v0.3.0) (2026-07-30)
+
+
+### Features
+
+* graceful degradation — serve stale tree, scraper timeout env, stale banner ([4988562](https://github.com/AristideWafo/infra-map/commit/49885627d7d180824b861f31436168e3c6b7fb9c))
+* **infra-maps-api:** enrich K8s pods with CPU/memory from Prometheus cadvisor ([#8](https://github.com/AristideWafo/infra-map/issues/8)) ([a5644a4](https://github.com/AristideWafo/infra-map/commit/a5644a4cb7b23d56877ba2acf2b23b818e1a0343))
+* **infra-maps-api:** pagination on /connections per contract conventions ([#9](https://github.com/AristideWafo/infra-map/issues/9)) ([2a9c0a7](https://github.com/AristideWafo/infra-map/commit/2a9c0a73392d7637ad53162c9f65769c1c82c03f))
+* **infra-maps-ui:** side panel tabs (metrics/logs/details), WS alerts with pulse ([cacc59d](https://github.com/AristideWafo/infra-map/commit/cacc59d23e754657cffa7daaacb29e5f0b17a1aa))
+
 ## [0.2.0](https://github.com/AristideWafo/infra-map/compare/infra-maps-api-v0.1.0...infra-maps-api-v0.2.0) (2026-07-30)
 
 
