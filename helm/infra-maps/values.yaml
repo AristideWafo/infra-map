@@ -1,0 +1,50 @@
+image:
+  repository: ghcr.io/aristidewafo/infra-maps-api
+  tag: ""            # défaut : appVersion du chart — jamais :latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1  # Toujours 1 — cache en mémoire (pas de HA sans store partagé)
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  className: nginx
+  host: infra-maps.example.com
+  tls: []
+
+scrapers:
+  prometheus:
+    enabled: true
+    url: "http://prometheus:9090"  # Obligatoire
+    interval: "30s"
+  kubernetes:
+    enabled: true
+    inCluster: true
+  docker:
+    enabled: false  # socket Docker non dispo dans K8s par défaut
+    socketPath: /var/run/docker.sock
+  loki:
+    enabled: false
+    url: ""
+    maxLines: 100
+
+auth:
+  enabled: true
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+serviceAccount:
+  create: true
+  name: ""
+
+rbac:
+  create: true

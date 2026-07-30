@@ -1,0 +1,10 @@
+InfraMaps est déployé.
+
+Accès rapide :
+  kubectl port-forward svc/{{ include "infra-maps.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+  → http://localhost:{{ .Values.service.port }}/api/v1/health
+
+Prometheus configuré : {{ .Values.scrapers.prometheus.url }}
+{{- if not .Values.scrapers.loki.enabled }}
+Loki désactivé — onglet Logs indisponible (scrapers.loki.enabled=true pour l'activer).
+{{- end }}

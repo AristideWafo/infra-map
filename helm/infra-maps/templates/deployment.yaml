@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "infra-maps.fullname" . }}
+  labels:
+    {{- include "infra-maps.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "infra-maps.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "infra-maps.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "infra-maps.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ include "infra-maps.imageTag" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PROMETHEUS_URL
+              value: {{ .Values.scrapers.prometheus.url | quote }}
+            - name: SCRAPE_INTERVAL
+              value: {{ .Values.scrapers.prometheus.interval | quote }}
+            - name: K8S_ENABLED
+              value: {{ .Values.scrapers.kubernetes.enabled | quote }}
+            - name: K8S_IN_CLUSTER
+              value: {{ .Values.scrapers.kubernetes.inCluster | quote }}
+            - name: DOCKER_ENABLED
+              value: {{ .Values.scrapers.docker.enabled | quote }}
+            {{- if .Values.scrapers.docker.enabled }}
+            - name: DOCKER_SOCKET
+              value: {{ .Values.scrapers.docker.socketPath | quote }}
+            {{- end }}
+            {{- if .Values.scrapers.loki.enabled }}
+            - name: LOKI_URL
+              value: {{ .Values.scrapers.loki.url | quote }}
+            - name: LOKI_MAX_LINES
+              value: {{ .Values.scrapers.loki.maxLines | quote }}
+            {{- end }}
+            - name: AUTH_ENABLED
+              value: {{ .Values.auth.enabled | quote }}
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

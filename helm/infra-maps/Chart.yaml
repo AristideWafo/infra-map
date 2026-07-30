@@ -1,0 +1,6 @@
+apiVersion: v2
+name: infra-maps
+description: Topology-first infrastructure visualization — connects to existing Prometheus/K8s/Docker/Loki
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
