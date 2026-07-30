@@ -22,16 +22,23 @@ func main() {
 
 	c := cache.New(cfg.CacheTTL)
 	engine := layout.NewEngine()
-	scrapers := buildScrapers(cfg, log)
+	scrapers, metricsProvider := buildScrapers(cfg, log)
 	orch := scraper.NewOrchestrator(scrapers, c, engine, cfg.ScrapeInterval, log)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	go orch.Run(ctx)
 
+	var logsProvider handlers.LogsProvider
+	if cfg.LokiURL != "" {
+		logsProvider = scraper.NewLoki(cfg.LokiURL, 100)
+	}
+
+	treeHandler := handlers.NewTreeHandler(c)
 	r := gin.Default()
 	r.Use(cors(cfg.CORSOrigin))
-	api.Register(r, handlers.NewTreeHandler(c), handlers.NewHealthHandler(scrapers, c))
+	api.Register(r, treeHandler, handlers.NewHealthHandler(scrapers, c),
+		handlers.NewMetricsHandler(metricsProvider), handlers.NewLogsHandler(logsProvider, treeHandler))
 
 	log.Info("starting infra-maps-api",
 		"port", cfg.Port,
@@ -44,20 +51,25 @@ func main() {
 	}
 }
 
-// buildScrapers assemble les sources selon la config. Une source qui échoue à
+// buildScrapers assemble les sources selon la config et retourne aussi le
+// provider de métriques historiques (réel ou mock). Une source qui échoue à
 // l'initialisation est remplacée par un Noop : le service démarre quand même.
-func buildScrapers(cfg config.Config, log *slog.Logger) []scraper.Scraper {
+func buildScrapers(cfg config.Config, log *slog.Logger) ([]scraper.Scraper, handlers.MetricsProvider) {
 	if cfg.MockEnabled {
-		return []scraper.Scraper{scraper.NewMockPrometheus()}
+		mock := scraper.NewMockPrometheus()
+		return []scraper.Scraper{mock}, mock
 	}
 
 	var scrapers []scraper.Scraper
+	var metrics handlers.MetricsProvider
 	prom, err := scraper.NewPrometheus(cfg.PrometheusURL)
 	if err != nil {
 		log.Error("prometheus scraper init failed", "error", err)
 		scrapers = append(scrapers, scraper.NewNoop("prometheus"))
+		metrics = scraper.NewMockPrometheus()
 	} else {
 		scrapers = append(scrapers, prom)
+		metrics = prom
 	}
 
 	if cfg.K8sEnabled {
@@ -79,7 +91,7 @@ func buildScrapers(cfg config.Config, log *slog.Logger) []scraper.Scraper {
 			scrapers = append(scrapers, docker)
 		}
 	}
-	return scrapers
+	return scrapers, metrics
 }
 
 func cors(origin string) gin.HandlerFunc {

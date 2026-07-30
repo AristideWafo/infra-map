@@ -17,7 +17,9 @@ type fakePromAPI struct {
 	targets    promv1.TargetsResult
 	targetsErr error
 	// vectors par requête PromQL
-	vectors map[string]model.Vector
+	vectors  map[string]model.Vector
+	matrices map[string]model.Matrix
+	rangeErr error
 }
 
 func (f *fakePromAPI) Targets(_ context.Context) (promv1.TargetsResult, error) {
@@ -29,6 +31,16 @@ func (f *fakePromAPI) Query(_ context.Context, q string, _ time.Time, _ ...promv
 		return v, nil, nil
 	}
 	return model.Vector{}, nil, nil
+}
+
+func (f *fakePromAPI) QueryRange(_ context.Context, q string, _ promv1.Range, _ ...promv1.Option) (model.Value, promv1.Warnings, error) {
+	if f.rangeErr != nil {
+		return nil, nil, f.rangeErr
+	}
+	if v, ok := f.matrices[q]; ok {
+		return v, nil, nil
+	}
+	return model.Matrix{}, nil, nil
 }
 
 func sample(instance string, value float64) *model.Sample {
@@ -128,4 +140,33 @@ func TestPrometheus_TargetsErrorPropagatesToHealth(t *testing.T) {
 	_, err = p.Scrape(context.Background())
 	require.NoError(t, err)
 	assert.NoError(t, p.Health())
+}
+
+func TestPrometheus_RangeMetrics(t *testing.T) {
+	pair := func(ts int64, v float64) model.SamplePair {
+		return model.SamplePair{Timestamp: model.Time(ts * 1000), Value: model.SampleValue(v)}
+	}
+	instance := "192.168.1.10:9100"
+	cpuQuery := `100 - avg(rate(node_cpu_seconds_total{mode="idle",instance="` + instance + `"}[5m])) * 100`
+	fake := &fakePromAPI{matrices: map[string]model.Matrix{
+		cpuQuery: {&model.SampleStream{Values: []model.SamplePair{pair(100, 42.0), pair(160, 45.0)}}},
+	}}
+	p := newPrometheusWithAPI(fake)
+
+	series, err := p.RangeMetrics(context.Background(), instance,
+		time.Unix(100, 0), time.Unix(200, 0), time.Minute, "cpu")
+	require.NoError(t, err)
+	require.Len(t, series["cpu"], 2)
+	assert.InDelta(t, 42.0, series["cpu"][0].Value, 0.01)
+	// metric="cpu" : pas d'autres séries
+	assert.NotContains(t, series, "memory")
+}
+
+func TestPrometheus_RangeMetricsError(t *testing.T) {
+	fake := &fakePromAPI{rangeErr: errors.New("timeout")}
+	p := newPrometheusWithAPI(fake)
+
+	_, err := p.RangeMetrics(context.Background(), "x",
+		time.Unix(0, 0), time.Unix(60, 0), time.Minute, "cpu")
+	assert.Error(t, err)
 }

@@ -77,6 +77,32 @@ type Connection struct {
 	Type     string  `json:"type"`
 }
 
+// MetricPoint est un point de série temporelle (proxy Prometheus).
+type MetricPoint struct {
+	Timestamp time.Time `json:"timestamp"`
+	Value     float64   `json:"value"`
+}
+
+// LogEntry représente une entrée de log (depuis Loki).
+type LogEntry struct {
+	Timestamp time.Time `json:"timestamp"`
+	Level     string    `json:"level"`
+	Message   string    `json:"message"`
+	Pod       string    `json:"pod,omitempty"`
+	Container string    `json:"container,omitempty"`
+	Node      string    `json:"node,omitempty"`
+}
+
+// Alert représente une alerte Prometheus en cours.
+type Alert struct {
+	ID       string    `json:"id"`
+	NodeID   string    `json:"nodeId"`
+	Name     string    `json:"name"`
+	Severity string    `json:"severity"`
+	Message  string    `json:"message"`
+	FiredAt  time.Time `json:"firedAt"`
+}
+
 // HealthStatus est l'état de santé des scrapers exposé par /health.
 type HealthStatus struct {
 	Status   string                   `json:"status"`

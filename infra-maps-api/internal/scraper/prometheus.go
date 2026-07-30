@@ -3,6 +3,7 @@ package scraper
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 // promAPI est le sous-ensemble de l'API Prometheus v1 utilisé — mockable en tests.
 type promAPI interface {
 	Query(ctx context.Context, query string, ts time.Time, opts ...promv1.Option) (model.Value, promv1.Warnings, error)
+	QueryRange(ctx context.Context, query string, r promv1.Range, opts ...promv1.Option) (model.Value, promv1.Warnings, error)
 	Targets(ctx context.Context) (promv1.TargetsResult, error)
 }
 
@@ -178,4 +180,49 @@ func labelsToMap(ls model.LabelSet) map[string]string {
 		m[string(k)] = string(v)
 	}
 	return m
+}
+
+// Requêtes range par métrique — %s = instance.
+var rangeQueries = map[string]string{
+	"cpu":    `100 - avg(rate(node_cpu_seconds_total{mode="idle",instance="%s"}[5m])) * 100`,
+	"memory": `(node_memory_MemTotal_bytes{instance="%s"} - node_memory_MemAvailable_bytes{instance="%s"}) / 1024 / 1024`,
+	"disk":   `100 - (node_filesystem_avail_bytes{mountpoint="/",instance="%s"} / node_filesystem_size_bytes{mountpoint="/",instance="%s"}) * 100`,
+}
+
+// RangeMetrics retourne les séries historiques d'un nœud (proxy /metrics).
+// metric vide = toutes les métriques connues.
+func (p *Prometheus) RangeMetrics(ctx context.Context, nodeID string, from, to time.Time, step time.Duration, metric string) (map[string][]models.MetricPoint, error) {
+	out := map[string][]models.MetricPoint{}
+	r := promv1.Range{Start: from, End: to, Step: step}
+
+	for name, tmpl := range rangeQueries {
+		if metric != "" && metric != name {
+			continue
+		}
+		query := fmt.Sprintf(tmpl, repeatArg(tmpl, nodeID)...)
+		val, _, err := p.api.QueryRange(ctx, query, r)
+		if err != nil {
+			return nil, fmt.Errorf("prometheus range query %s: %w", name, err)
+		}
+		matrix, ok := val.(model.Matrix)
+		if !ok || len(matrix) == 0 {
+			continue
+		}
+		series := make([]models.MetricPoint, 0, len(matrix[0].Values))
+		for _, v := range matrix[0].Values {
+			series = append(series, models.MetricPoint{Timestamp: v.Timestamp.Time(), Value: float64(v.Value)})
+		}
+		out[name] = series
+	}
+	return out, nil
+}
+
+// repeatArg fournit autant de fois nodeID que le template a de %s.
+func repeatArg(tmpl, arg string) []interface{} {
+	n := strings.Count(tmpl, "%s")
+	args := make([]interface{}, n)
+	for i := range args {
+		args[i] = arg
+	}
+	return args
 }

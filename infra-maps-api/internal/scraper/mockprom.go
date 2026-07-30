@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"math"
 	"context"
 	"time"
 
@@ -83,4 +84,34 @@ func (m *MockPrometheus) Connections(ctx context.Context) ([]*models.Connection,
 		{ID: "pod-api-2-pod-db-1", FromID: "pod-api-2", ToID: "pod-db-1", Protocol: "tcp", Type: "service"},
 		{ID: "pod-api-1-pod-cache-1", FromID: "pod-api-1", ToID: "pod-cache-1", Protocol: "tcp", Type: "service"},
 	}, nil
+}
+
+// RangeMetrics génère des séries synthétiques plausibles (dev sans Prometheus).
+// Déterministe : mêmes bornes → mêmes valeurs.
+func (m *MockPrometheus) RangeMetrics(ctx context.Context, nodeID string, from, to time.Time, step time.Duration, metric string) (map[string][]models.MetricPoint, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if step <= 0 {
+		step = time.Minute
+	}
+	base := map[string]float64{"cpu": 45, "memory": 512, "disk": 40}
+	amp := map[string]float64{"cpu": 25, "memory": 128, "disk": 5}
+
+	out := map[string][]models.MetricPoint{}
+	for name := range base {
+		if metric != "" && metric != name {
+			continue
+		}
+		var series []models.MetricPoint
+		for ts := from; !ts.After(to); ts = ts.Add(step) {
+			phase := float64(ts.Unix()%3600) / 3600 * 2 * math.Pi
+			series = append(series, models.MetricPoint{
+				Timestamp: ts,
+				Value:     base[name] + amp[name]*math.Sin(phase),
+			})
+		}
+		out[name] = series
+	}
+	return out, nil
 }
