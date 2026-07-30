@@ -18,8 +18,10 @@ type fakePromAPI struct {
 	targetsErr error
 	// vectors par requête PromQL
 	vectors  map[string]model.Vector
-	matrices map[string]model.Matrix
-	rangeErr error
+	matrices  map[string]model.Matrix
+	rangeErr  error
+	alerts    promv1.AlertsResult
+	alertsErr error
 }
 
 func (f *fakePromAPI) Targets(_ context.Context) (promv1.TargetsResult, error) {
@@ -169,4 +171,30 @@ func TestPrometheus_RangeMetricsError(t *testing.T) {
 	_, err := p.RangeMetrics(context.Background(), "x",
 		time.Unix(0, 0), time.Unix(60, 0), time.Minute, "cpu")
 	assert.Error(t, err)
+}
+
+func (f *fakePromAPI) Alerts(_ context.Context) (promv1.AlertsResult, error) {
+	return f.alerts, f.alertsErr
+}
+
+func TestPrometheus_AlertsNormalization(t *testing.T) {
+	fake := &fakePromAPI{alerts: promv1.AlertsResult{Alerts: []promv1.Alert{
+		{
+			State:  promv1.AlertStateFiring,
+			Labels: model.LabelSet{"alertname": "PodCrashLooping", "pod": "api-1", "severity": "critical"},
+			Annotations: model.LabelSet{"summary": "Pod api-1 restarting"},
+		},
+		{State: promv1.AlertStatePending, Labels: model.LabelSet{"alertname": "Ignored"}},
+	}}}
+	p := newPrometheusWithAPI(fake)
+
+	alerts, err := p.Alerts(context.Background())
+	require.NoError(t, err)
+	require.Len(t, alerts, 1) // pending exclu
+
+	a := alerts[0]
+	assert.Equal(t, "alert-PodCrashLooping-api-1", a.ID)
+	assert.Equal(t, "api-1", a.NodeID)
+	assert.Equal(t, "critical", a.Severity)
+	assert.Equal(t, "Pod api-1 restarting", a.Message)
 }

@@ -18,6 +18,7 @@ type promAPI interface {
 	Query(ctx context.Context, query string, ts time.Time, opts ...promv1.Option) (model.Value, promv1.Warnings, error)
 	QueryRange(ctx context.Context, query string, r promv1.Range, opts ...promv1.Option) (model.Value, promv1.Warnings, error)
 	Targets(ctx context.Context) (promv1.TargetsResult, error)
+	Alerts(ctx context.Context) (promv1.AlertsResult, error)
 }
 
 // Requêtes PromQL (DATA_MODELS.md — mapping Prometheus → VM).
@@ -225,4 +226,40 @@ func repeatArg(tmpl, arg string) []interface{} {
 		args[i] = arg
 	}
 	return args
+}
+
+// Alerts retourne les alertes Prometheus actives, normalisées.
+func (p *Prometheus) Alerts(ctx context.Context) ([]models.Alert, error) {
+	res, err := p.api.Alerts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("prometheus alerts: %w", err)
+	}
+	var out []models.Alert
+	for _, a := range res.Alerts {
+		if a.State != promv1.AlertStateFiring {
+			continue
+		}
+		name := string(a.Labels["alertname"])
+		nodeID := string(a.Labels["pod"])
+		if nodeID == "" {
+			nodeID = string(a.Labels["instance"])
+		}
+		severity := string(a.Labels["severity"])
+		if severity == "" {
+			severity = "warning"
+		}
+		msg := string(a.Annotations["summary"])
+		if msg == "" {
+			msg = string(a.Annotations["description"])
+		}
+		out = append(out, models.Alert{
+			ID:       "alert-" + name + "-" + nodeID,
+			NodeID:   nodeID,
+			Name:     name,
+			Severity: severity,
+			Message:  msg,
+			FiredAt:  a.ActiveAt,
+		})
+	}
+	return out, nil
 }

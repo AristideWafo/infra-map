@@ -13,6 +13,7 @@ import (
 	"github.com/aristidewafo/infra-maps-api/internal/config"
 	"github.com/aristidewafo/infra-maps-api/internal/layout"
 	"github.com/aristidewafo/infra-maps-api/internal/scraper"
+	"github.com/aristidewafo/infra-maps-api/internal/ws"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,11 +35,18 @@ func main() {
 		logsProvider = scraper.NewLoki(cfg.LokiURL, 100)
 	}
 
+	hub := ws.NewHub(log)
+	go hub.RunPing(ctx)
+	if alertsProvider, ok := metricsProvider.(ws.AlertsProvider); ok {
+		watcher := ws.NewAlertWatcher(alertsProvider, hub, cfg.ScrapeInterval, log)
+		go watcher.Run(ctx)
+	}
+
 	treeHandler := handlers.NewTreeHandler(c)
 	r := gin.Default()
 	r.Use(cors(cfg.CORSOrigin))
 	api.Register(r, treeHandler, handlers.NewHealthHandler(scrapers, c),
-		handlers.NewMetricsHandler(metricsProvider), handlers.NewLogsHandler(logsProvider, treeHandler))
+		handlers.NewMetricsHandler(metricsProvider), handlers.NewLogsHandler(logsProvider, treeHandler), hub)
 
 	log.Info("starting infra-maps-api",
 		"port", cfg.Port,

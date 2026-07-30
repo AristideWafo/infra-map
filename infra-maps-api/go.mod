@@ -5,6 +5,7 @@ go 1.26.5
 require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/gin-gonic/gin v1.12.0
+	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/prometheus/client_golang v1.24.1
 	github.com/prometheus/common v0.70.1
 	github.com/stretchr/testify v1.11.1

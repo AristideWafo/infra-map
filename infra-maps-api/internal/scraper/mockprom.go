@@ -115,3 +115,16 @@ func (m *MockPrometheus) RangeMetrics(ctx context.Context, nodeID string, from, 
 	}
 	return out, nil
 }
+
+// Alerts simule une alerte critique permanente sur le pod en surcharge.
+func (m *MockPrometheus) Alerts(ctx context.Context) ([]models.Alert, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return []models.Alert{{
+		ID: "alert-PodHighCPU-pod-worker-1", NodeID: "pod-worker-1",
+		Name: "PodHighCPU", Severity: "critical",
+		Message: "Pod job-worker-1 CPU above 90% for 10 minutes",
+		FiredAt: m.now().Add(-10 * time.Minute),
+	}}, nil
+}
