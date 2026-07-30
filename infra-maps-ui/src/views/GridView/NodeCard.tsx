@@ -23,6 +23,7 @@ export function NodeCard({ node, isSelected, onClick }: NodeCardProps) {
   return (
     <div
       className={classes}
+      data-node-id={node.id}
       onClick={() => onClick(node)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') onClick(node)
