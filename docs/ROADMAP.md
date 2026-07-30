@@ -25,11 +25,11 @@ Rien de grave — c'est normal à ce stade — mais la doc ne doit pas raconter 
 
 ```
 Phase 0   ✅  MVP Grid 2D + API Go (arbre mocké de bout en bout, testé)
-Phase 0.5 ✅  Fondations CI/CD + tests unitaires + releases GitHub automatiques (reste : protection de branche — manuel)
-Phase 1   🔄  Scrapers réels — code livré, validation cluster réel restante
-Phase 2   🔄  Utilisabilité quotidienne — P0+P1+P2 livrés (Loki, WS alertes, Helm, breadcrumb, search)
-Phase 3   🔄  Robustesse production — stale-serving, timeouts, URL state, Échap livrés
-Phase 4   ⏳  Vue 3D Maps — Three.js [CONDITIONNEL]
+Phase 0.5 ✅  Fondations CI/CD + tests unitaires + releases GitHub automatiques
+Phase 1   🔄  Scrapers réels — 100% du code livré et testé, validation cluster réel restante
+Phase 2   🔄  Utilisabilité quotidienne — 100% du code livré, condition de sortie temporelle restante
+Phase 3   🔄  Robustesse production — code livré (dégradation, pagination, multi-mode, états vides), timeout par scraper + validation temporelle restants
+Phase 4   ⏳  Vue 3D Maps — Three.js [CONDITIONNEL — gate non remplie, ne pas lancer]
 Phase 5   ⏳  Actions production [PRUDENCE — décision future]
 ```
 
@@ -48,7 +48,7 @@ Phase 5   ⏳  Actions production [PRUDENCE — décision future]
 
 ---
 
-## Phase 0.5 — 🔄 Fondations CI/CD, Tests & Releases Automatiques
+## Phase 0.5 — ✅ Fondations CI/CD, Tests & Releases Automatiques (clos le 2026-07-30)
 
 **Estimé :** 3–5 jours — **bloquant avant Phase 1**, à la demande explicite du projet : tout doit être automatique, y compris les releases GitHub.
 
@@ -70,9 +70,9 @@ Phase 5   ⏳  Actions production [PRUDENCE — décision future]
 
 | Tâche | Priorité | Notes |
 |-------|----------|-------|
-| Activer la protection de branche `prod` : check `Lint, test, build` (backend + frontend) requis, `Allow auto-merge` sur le repo | 🔴 P0 | **Seule étape manuelle restante** — `gh auth login` puis `gh api -X PUT repos/AristideWafo/infra-map/branches/prod/protection ...` (ou via Settings GitHub) |
+| ~~Activer la protection de branche `prod` : check `Lint, test, build` (backend + frontend) requis, `Allow auto-merge` sur le repo~~ | ~~🔴 P0~~ | ✅ Fait — branche protégée, push direct rejeté, CI requise |
 
-Fait depuis (2026-07-30) : Dockerfile multi-stage distroless ✅, job GHCR sur release ✅ (tag image = tag release), Conventional Commits adoptés sur tous les commits ✅, workflows repointés sur `prod` (ils visaient `main` qui n'existe pas) ✅. Les PRs release-please s'ouvrent bien à chaque push.
+Fait depuis (2026-07-30) : Dockerfile multi-stage distroless ✅, job GHCR sur release ✅ (tag image = tag release), Conventional Commits adoptés sur tous les commits ✅, workflows repointés sur `prod` ✅, pnpm version épinglée dans workflow + `package.json` ✅, GHCR tag lowercase ✅. Les PRs release-please s'ouvrent bien à chaque push, la branch protection est active.
 
 ### Condition de sortie ✅
 
@@ -97,35 +97,35 @@ Fait depuis (2026-07-30) : Dockerfile multi-stage distroless ✅, job GHCR sur r
 
 ### Backend
 
-| Tâche | Priorité | Complexité |
-|-------|----------|-----------|
-| Prometheus scraper réel (PromQL CPU/RAM/Disk) | 🔴 P0 | Moyenne |
-| VM scraper (Prometheus `/api/v1/targets` + node_exporter) | 🔴 P0 | Moyenne |
-| K8s API scraper — nodes, pods, namespaces (client-go) | 🔴 P0 | Haute |
-| Docker scraper — containers standalone + réseaux | 🟡 P1 | Moyenne |
-| Connection Resolver (K8s Services + Endpoints + Ingress) | 🔴 P0 | Haute |
-| Layout Engine — positions déterministes (Grid 2D) | 🔴 P0 | Haute |
-| Health endpoint réel (`/api/v1/health`) | 🟡 P1 | Faible |
+| Tâche | Priorité | Complexité | Statut |
+|-------|----------|-----------|--------|
+| Prometheus scraper réel (PromQL CPU/RAM/Disk) | 🔴 P0 | Moyenne | ✅ |
+| VM scraper (Prometheus `/api/v1/targets` + node_exporter) | 🔴 P0 | Moyenne | ✅ |
+| K8s API scraper — nodes, pods, namespaces (client-go) | 🔴 P0 | Haute | ✅ |
+| Docker scraper — containers standalone + réseaux | 🟡 P1 | Moyenne | ✅ |
+| Connection Resolver (K8s Services + Endpoints) | 🔴 P0 | Haute | ✅ (Ingress non couvert) |
+| Layout Engine — positions déterministes (Grid 2D) | 🔴 P0 | Haute | ✅ |
+| Health endpoint réel (`/api/v1/health`) | 🟡 P1 | Faible | ✅ |
 
 ### Frontend
 
-| Tâche | Priorité | Complexité |
-|-------|----------|-----------|
-| ConnectionSVG.tsx — lignes SVG entre nœuds | 🟡 P1 | Moyenne |
-| StatusBadge avec code couleur depuis design system | 🔴 P0 | Faible |
-| Filtre namespace fonctionnel | 🟡 P1 | Faible |
-| Skeleton loading states | 🟡 P1 | Faible |
+| Tâche | Priorité | Complexité | Statut |
+|-------|----------|-----------|--------|
+| ConnectionSVG.tsx — lignes SVG entre nœuds | 🟡 P1 | Moyenne | ✅ |
+| StatusBadge avec code couleur depuis design system | 🔴 P0 | Faible | ✅ |
+| Filtre namespace fonctionnel | 🟡 P1 | Faible | ✅ |
+| Skeleton loading states | 🟡 P1 | Faible | ✅ |
 
 ### Tests
 
-| Tâche |
-|-------|
-| Tests unitaires PrometheusScraper (mock Prometheus client) |
-| Tests unitaires K8sScraper (mock client-go) |
-| Tests unitaires DockerScraper (mock Docker client) |
-| Test Layout Engine idempotence |
-| Test Connection Resolver avec fixtures K8s |
-| docker-compose.dev.yml fonctionnel |
+| Tâche | Statut |
+|-------|--------|
+| Tests unitaires PrometheusScraper (mock Prometheus client) | ✅ |
+| Tests unitaires K8sScraper (mock client-go) | ✅ |
+| Tests unitaires DockerScraper (mock Docker client) | ✅ |
+| Test Layout Engine idempotence | ✅ |
+| Test Connection Resolver avec fixtures K8s | ✅ |
+| docker-compose.dev.yml fonctionnel | ✅ |
 
 ### Condition de sortie ✅
 
@@ -142,34 +142,36 @@ Fait depuis (2026-07-30) : Dockerfile multi-stage distroless ✅, job GHCR sur r
 - Front : SidePanel à onglets Métriques (Recharts) | Logs (LogViewer, filtre niveau, auto-scroll) | Détails ; alertes temps réel via WS avec reconnexion backoff (1s→30s) et pulse CSS sur les nœuds en alerte.
 - Packaging : chart Helm complet (RBAC moindre privilège, probes, non-root, limits, tag image = appVersion), `helm lint` + `template` verts.
 
-**Restant :** breadcrumb (P1), search globale (P2), condition de sortie temporelle (2 semaines d'usage quotidien).
+**Livré depuis :** breadcrumb navigation, URL state partageable, search globale (nom/namespace), pagination /connections.
+
+**Restant :** condition de sortie temporelle (2 semaines d'usage quotidien réel — non applicable sans déploiement client).
 
 ### Backend
 
-| Tâche | Priorité |
-|-------|----------|
-| Loki proxy réel (logs on-demand par nodeId) | 🔴 P0 |
-| WebSocket alertes (Alertmanager webhook → push WS) | 🔴 P0 |
-| Config complète via env vars (toutes les vars de DEPLOYMENT.md) | 🔴 P0 |
-| CORS configurable | 🟡 P1 |
+| Tâche | Priorité | Statut |
+|-------|----------|--------|
+| Loki proxy réel (logs on-demand par nodeId) | 🔴 P0 | ✅ |
+| WebSocket alertes (Alertmanager webhook → push WS) | 🔴 P0 | ✅ (poll Prometheus Alerts API, pas de webhook Alertmanager direct) |
+| Config complète via env vars (toutes les vars de DEPLOYMENT.md) | 🔴 P0 | ✅ |
+| CORS configurable | 🟡 P1 | ✅ |
 
 ### Frontend
 
-| Tâche | Priorité |
-|-------|----------|
-| Side Panel métriques historiques (Recharts, proxy Prometheus) | 🔴 P0 |
-| Side Panel logs (LogViewer, auto-scroll, filtre level) | 🔴 P0 |
-| Pulse animation CSS sur les nœuds en alerte | 🔴 P0 |
-| Breadcrumb navigation (root → cluster → node → pod) | 🟡 P1 |
-| Filtre tag + statut dans la Toolbar | 🟡 P1 |
-| Search globale (nom de pod, namespace) | 🟠 P2 |
+| Tâche | Priorité | Statut |
+|-------|----------|--------|
+| Side Panel métriques historiques (Recharts, proxy Prometheus) | 🔴 P0 | ✅ |
+| Side Panel logs (LogViewer, auto-scroll, filtre level) | 🔴 P0 | ✅ |
+| Pulse animation CSS sur les nœuds en alerte | 🔴 P0 | ✅ |
+| Breadcrumb navigation (root → cluster → node → pod) | 🟡 P1 | ✅ |
+| Filtre tag + statut dans la Toolbar | 🟡 P1 | ✅ |
+| Search globale (nom de pod, namespace) | 🟠 P2 | ✅ |
 
 ### Packaging
 
-| Tâche | Priorité |
-|-------|----------|
-| Helm chart fonctionnel (deploy namespace, RBAC, values.yaml) | 🔴 P0 |
-| CI/CD GitHub Actions (test + build + push image) | 🟡 P1 |
+| Tâche | Priorité | Statut |
+|-------|----------|--------|
+| Helm chart fonctionnel (deploy namespace, RBAC, values.yaml) | 🔴 P0 | ✅ |
+| CI/CD GitHub Actions (test + build + push image) | 🟡 P1 | ✅ |
 
 ### Condition de sortie ✅
 
@@ -177,37 +179,29 @@ Fait depuis (2026-07-30) : Dockerfile multi-stage distroless ✅, job GHCR sur r
 
 ---
 
-## Phase 3 — Robustesse Production
-
-**Estimé :** 3 semaines (après Phase 2 stable)
+## Phase 3 — 🔄 Robustesse Production (code livré le 2026-07-30 — condition de sortie temporelle restante)
 
 **Objectif :** Prêt à déployer chez des clients sans surveillance.
 
-### Backend
+**Livré :**
+- Graceful degradation : `Cache.GetStale` sert l'arbre même expiré (503 uniquement avant le premier scrape réussi), âge exposé via `X-Cache-Age-Seconds`.
+- Reconnexion WS backoff exponentiel (1s→30s) déjà en place depuis Phase 2, vérifiée ici.
+- Pagination `/connections` (`page`/`limit`, défaut 50, max 200, `ERR_INVALID_PARAM` si invalide).
+- Les 3 modes dégradés (K8s-only, Docker-only, VM-only) fonctionnent nativement via `K8S_ENABLED`/`DOCKER_ENABLED` — Prometheus reste la seule source obligatoire. Testés explicitement (`cmd/server/main_test.go`, 6 cas incl. fallback Noop sur échec d'init).
+- État vide par zone : toute zone (cluster/island/node) à 0 enfant affiche `Aucune donnée — vérifier [source]` au lieu d'une grille silencieuse (conforme DESIGN_SYSTEM.md).
+- Bandeau + opacité 0.5 sur les données périmées même en 200 OK (pas seulement sur erreur réseau) — via `X-Cache-Age-Seconds`.
+- URL state (`?node=<id>`) partageable, restaurée au chargement.
+- Keyboard navigation : Tab/Entrée déjà natifs sur les `NodeCard` (`role="button" tabIndex={0}` + handler Espace/Entrée), Échap ferme le SidePanel.
 
-| Tâche | Priorité |
-|-------|----------|
-| Graceful degradation (scraper down → données périmées affichées) | 🔴 P0 |
-| Reconnexion automatique WebSocket (backoff exponentiel) | 🔴 P0 |
-| Pagination API (`?page=N&limit=50`) pour clusters > 100 pods | 🔴 P0 |
-| Mode sans K8s — Docker Compose uniquement | 🔴 P0 |
-| Mode sans Docker — K8s uniquement | 🔴 P0 |
-| Mode VM only — Prometheus targets uniquement | 🔴 P0 |
-| Timeout configurable sur chaque scraper | 🟡 P1 |
-
-### Frontend
-
-| Tâche | Priorité |
-|-------|----------|
-| Lazy loading sous-arbres (cliquer pour charger les enfants) | 🔴 P0 |
-| État erreur source (scraper down — données périmées signalées) | 🔴 P0 |
-| État vide (cluster/island sans données) | 🔴 P0 |
-| URL state (lien partageable vers un nœud : `?node=pod-api-1`) | 🟡 P1 |
-| Keyboard navigation (Tab, Entrée, Échap) | 🟠 P2 |
+**Restant :**
+- Timeout **par scraper** — `SCRAPER_TIMEOUT` est aujourd'hui global (un seul timeout pour tout le cycle), pas configurable source par source.
+- Lazy loading sous-arbres — non fait ; l'arbre complet est chargé en un seul `/tree`. Reporté : aucune preuve de besoin à l'échelle actuelle (mock/petits clusters), un vrai cluster >100 pods trancherait.
+- Condition de sortie temporelle (1 mois sans incident en prod/staging) — non applicable sans déploiement client réel.
 
 ### Condition de sortie ✅
 
 > InfraMaps tourne en production (ou staging client) pendant **1 mois sans incident** — scraper K8s qui redémarre, Loki indisponible → InfraMaps continue d'afficher les données disponibles sans crash.
+> Le code est prêt pour cette validation ; seul le déploiement réel et l'observation dans le temps restent à faire.
 
 ---
 
@@ -220,6 +214,8 @@ Fait depuis (2026-07-30) : Dockerfile multi-stage distroless ✅, job GHCR sur r
 2. La vue Grid 2D est utilisée régulièrement ET j'ai identifié un cas où la 3D apporterait une valeur que la 2D ne couvre pas
 
 **Si les deux conditions ne sont pas remplies : ne pas lancer Phase 4.**
+
+**État au 2026-07-30 : gate non remplie (ni l'une ni l'autre condition) — Phase 4 non démarrée, conformément à la règle.**
 
 ### Ce que ça apporte
 
