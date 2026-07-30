@@ -10,6 +10,12 @@ import (
 	"github.com/aristidewafo/infra-maps-api/internal/models"
 )
 
+// Enricher complète les nœuds d'autres sources avec des métriques
+// supplémentaires (ex: Prometheus enrichit les pods K8s). Best-effort.
+type Enricher interface {
+	Enrich(ctx context.Context, nodes []*models.UnifiedNode)
+}
+
 // Clés de cache écrites par l'orchestrateur, lues par les handlers.
 const (
 	CacheKeyTree        = "tree"
@@ -100,6 +106,12 @@ func (o *Orchestrator) ScrapeAll(ctx context.Context) {
 		}
 		allNodes = append(allNodes, r.nodes...)
 		allConns = append(allConns, r.conns...)
+	}
+
+	for _, s := range o.scrapers {
+		if e, ok := s.(Enricher); ok {
+			e.Enrich(scrapeCtx, allNodes)
+		}
 	}
 
 	tree := BuildTree(allNodes)

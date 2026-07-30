@@ -198,3 +198,48 @@ func TestPrometheus_AlertsNormalization(t *testing.T) {
 	assert.Equal(t, "critical", a.Severity)
 	assert.Equal(t, "Pod api-1 restarting", a.Message)
 }
+
+func TestPrometheus_EnrichPods(t *testing.T) {
+	fake := &fakePromAPI{vectors: map[string]model.Vector{
+		queryPodCPU: {podSample("api-1", 42.0)},
+		queryPodMem: {podSample("api-1", 256.0)},
+	}}
+	p := newPrometheusWithAPI(fake)
+
+	restarts := 0
+	memTotal := 512.0
+	pod := &models.UnifiedNode{
+		Name: "api-1", Type: models.NodeTypePod,
+		Status: models.StatusHealthy, Restarts: &restarts, MemoryTotal: &memTotal,
+	}
+	vm := &models.UnifiedNode{Name: "vm-1", Type: models.NodeTypeVM}
+
+	p.Enrich(context.Background(), []*models.UnifiedNode{pod, vm})
+
+	require.NotNil(t, pod.CPU)
+	assert.InDelta(t, 42.0, *pod.CPU, 0.01)
+	assert.InDelta(t, 256.0, *pod.Memory, 0.01)
+	assert.Equal(t, models.StatusHealthy, pod.Status)
+	assert.Nil(t, vm.CPU) // VM non touchée
+}
+
+func TestPrometheus_EnrichDoesNotDowngradeCritical(t *testing.T) {
+	fake := &fakePromAPI{vectors: map[string]model.Vector{
+		queryPodCPU: {podSample("bad-pod", 10.0)},
+		queryPodMem: {podSample("bad-pod", 64.0)},
+	}}
+	p := newPrometheusWithAPI(fake)
+
+	pod := &models.UnifiedNode{Name: "bad-pod", Type: models.NodeTypePod, Status: models.StatusCritical}
+	p.Enrich(context.Background(), []*models.UnifiedNode{pod})
+
+	// CrashLoopBackOff posé par K8s ne doit pas être écrasé par des métriques saines
+	assert.Equal(t, models.StatusCritical, pod.Status)
+}
+
+func podSample(pod string, value float64) *model.Sample {
+	return &model.Sample{
+		Metric: model.Metric{"pod": model.LabelValue(pod)},
+		Value:  model.SampleValue(value),
+	}
+}

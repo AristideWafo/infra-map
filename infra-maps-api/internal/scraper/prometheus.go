@@ -263,3 +263,65 @@ func (p *Prometheus) Alerts(ctx context.Context) ([]models.Alert, error) {
 	}
 	return out, nil
 }
+
+// Requêtes cadvisor pour enrichir les pods K8s (topologie portée par client-go,
+// métriques par Prometheus). CPU en % d'un cœur, mémoire working set en MB.
+const (
+	queryPodCPU = `sum by (pod) (rate(container_cpu_usage_seconds_total{container!=""}[5m])) * 100`
+	queryPodMem = `sum by (pod) (container_memory_working_set_bytes{container!=""}) / 1024 / 1024`
+)
+
+// Enrich complète les pods K8s (matchés par nom) avec CPU/RAM depuis cadvisor,
+// puis recalcule leur statut. Best-effort : requête en échec = pas d'enrichissement.
+func (p *Prometheus) Enrich(ctx context.Context, nodes []*models.UnifiedNode) {
+	cpu := p.vectorByLabel(ctx, queryPodCPU, "pod")
+	mem := p.vectorByLabel(ctx, queryPodMem, "pod")
+	if len(cpu) == 0 && len(mem) == 0 {
+		return
+	}
+
+	for _, n := range nodes {
+		if n.Type != models.NodeTypePod {
+			continue
+		}
+		if v, ok := cpu[n.Name]; ok {
+			c := v
+			n.CPU = &c
+		}
+		if v, ok := mem[n.Name]; ok {
+			m := v
+			n.Memory = &m
+		}
+		if n.CPU != nil && n.Memory != nil {
+			memPct := 0.0
+			if n.MemoryTotal != nil && *n.MemoryTotal > 0 {
+				memPct = *n.Memory / *n.MemoryTotal * 100
+			}
+			restarts := 0
+			if n.Restarts != nil {
+				restarts = *n.Restarts
+			}
+			// Ne pas rétrograder un statut critique posé par K8s (CrashLoopBackOff)
+			if n.Status != models.StatusCritical {
+				n.Status = models.CalculateStatus(*n.CPU, memPct, restarts)
+			}
+		}
+	}
+}
+
+// vectorByLabel indexe le résultat d'une requête instantanée par un label donné.
+func (p *Prometheus) vectorByLabel(ctx context.Context, query, label string) map[string]float64 {
+	out := map[string]float64{}
+	val, _, err := p.api.Query(ctx, query, p.now())
+	if err != nil {
+		return out
+	}
+	vec, ok := val.(model.Vector)
+	if !ok {
+		return out
+	}
+	for _, s := range vec {
+		out[string(s.Metric[model.LabelName(label)])] = float64(s.Value)
+	}
+	return out
+}
