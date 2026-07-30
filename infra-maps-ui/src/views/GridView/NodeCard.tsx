@@ -6,16 +6,18 @@ import { formatCPU, formatMemory } from '../../utils/format'
 interface NodeCardProps {
   node: UnifiedNode
   isSelected: boolean
+  isAlerting: boolean
   onClick: (node: UnifiedNode) => void
 }
 
 // Composant pur — pas d'appel API, pas d'accès au store.
-export function NodeCard({ node, isSelected, onClick }: NodeCardProps) {
+export function NodeCard({ node, isSelected, isAlerting, onClick }: NodeCardProps) {
   const classes = [
     'node-card',
     `node-card--${node.type}`,
     `node-card--${node.status}`,
     isSelected ? 'node-card--selected' : '',
+    isAlerting ? 'node-card--alerting' : '',
   ]
     .filter(Boolean)
     .join(' ')

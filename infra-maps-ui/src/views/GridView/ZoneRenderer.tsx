@@ -5,12 +5,13 @@ import { NodeCard } from './NodeCard'
 interface ZoneRendererProps {
   zone: UnifiedNode
   selectedNodeId: string | null
+  alertingIds: ReadonlySet<string>
   onSelect: (node: UnifiedNode) => void
 }
 
 // Rend une zone (cluster, vm-island, node K8s) et ses enfants.
 // Les zones intermédiaires sont rendues récursivement ; les feuilles en NodeCard.
-export function ZoneRenderer({ zone, selectedNodeId, onSelect }: ZoneRendererProps) {
+export function ZoneRenderer({ zone, selectedNodeId, alertingIds, onSelect }: ZoneRendererProps) {
   const children = zone.children ?? []
   const isLeaf = (n: UnifiedNode) => !n.children || n.children.length === 0
 
@@ -28,6 +29,7 @@ export function ZoneRenderer({ zone, selectedNodeId, onSelect }: ZoneRendererPro
               key={child.id}
               node={child}
               isSelected={selectedNodeId === child.id}
+              isAlerting={alertingIds.has(child.id)}
               onClick={onSelect}
             />
           ) : (
@@ -35,6 +37,7 @@ export function ZoneRenderer({ zone, selectedNodeId, onSelect }: ZoneRendererPro
               key={child.id}
               zone={child}
               selectedNodeId={selectedNodeId}
+              alertingIds={alertingIds}
               onSelect={onSelect}
             />
           ),

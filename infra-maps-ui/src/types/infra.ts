@@ -77,3 +77,30 @@ export interface ConnectionsResponse {
   connections: Connection[]
   total: number
 }
+
+export interface MetricPoint {
+  timestamp: string
+  value: number
+}
+
+export interface MetricsResponse {
+  nodeId: string
+  from: string
+  to: string
+  step: string
+  series: Record<string, MetricPoint[]>
+}
+
+export interface LogEntry {
+  timestamp: string
+  level: 'info' | 'warn' | 'error' | 'debug'
+  message: string
+  pod?: string
+  container?: string
+  node?: string
+}
+
+export interface LogsResponse {
+  nodeId: string
+  entries: LogEntry[]
+}

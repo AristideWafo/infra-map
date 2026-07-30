@@ -1,6 +1,7 @@
 import { useInfraStore } from './store/infra'
 import { useInfraTree } from './hooks/useInfraTree'
 import { useConnections } from './hooks/useConnections'
+import { useAlerts } from './hooks/useAlerts'
 import { useTags } from './hooks/useTags'
 import { findNodeById, flattenTree } from './utils/tree'
 import { GridView } from './views/GridView'
@@ -11,10 +12,12 @@ import './App.css'
 function App() {
   useInfraTree()
   useConnections()
+  useAlerts()
   const tags = useTags()
 
   const tree = useInfraStore((s) => s.tree)
   const connections = useInfraStore((s) => s.connections)
+  const alerts = useInfraStore((s) => s.alerts)
   const isLoading = useInfraStore((s) => s.isLoading)
   const isError = useInfraStore((s) => s.isError)
   const errorMessage = useInfraStore((s) => s.errorMessage)
@@ -29,6 +32,7 @@ function App() {
   const setFilterTag = useInfraStore((s) => s.setFilterTag)
 
   const selectedNode = selectedNodeId ? findNodeById(tree, selectedNodeId) : null
+  const alertingIds = new Set(alerts.map((a) => a.nodeId))
   const namespaces = [
     ...new Set(flattenTree(tree).flatMap((n) => (n.namespace ? [n.namespace] : []))),
   ].sort()
@@ -57,6 +61,7 @@ function App() {
         <GridView
           tree={tree}
           connections={connections}
+          alertingIds={alertingIds}
           isLoading={isLoading}
           isError={isError}
           errorMessage={errorMessage}

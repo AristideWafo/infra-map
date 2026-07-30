@@ -23,6 +23,17 @@ type Hub struct {
 	clients  map[*websocket.Conn]struct{}
 	upgrader websocket.Upgrader
 	log      *slog.Logger
+	// welcome fournit les messages à rejouer à chaque nouveau client
+	// (état courant des alertes) — sans lui, un client connecté après le
+	// déclenchement ne verrait jamais l'alerte active.
+	welcome func() []Message
+}
+
+// SetWelcome enregistre le fournisseur d'état initial pour les nouveaux clients.
+func (h *Hub) SetWelcome(f func() []Message) {
+	h.mu.Lock()
+	h.welcome = f
+	h.mu.Unlock()
 }
 
 func NewHub(log *slog.Logger) *Hub {
@@ -45,7 +56,16 @@ func (h *Hub) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	h.mu.Lock()
 	h.clients[conn] = struct{}{}
+	welcome := h.welcome
 	h.mu.Unlock()
+
+	if welcome != nil {
+		for _, msg := range welcome() {
+			if data, err := json.Marshal(msg); err == nil {
+				_ = conn.WriteMessage(websocket.TextMessage, data)
+			}
+		}
+	}
 
 	// Lecture bloquante : détecte la fermeture côté client.
 	go func() {

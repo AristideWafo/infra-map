@@ -21,7 +21,7 @@ const node: UnifiedNode = {
 
 describe('NodeCard', () => {
   test('affiche nom, statut et métriques', () => {
-    render(<NodeCard node={node} isSelected={false} onClick={() => {}} />)
+    render(<NodeCard node={node} isSelected={false} isAlerting={false} onClick={() => {}} />)
 
     expect(screen.getByRole('button', { name: 'api-frontend-1 — healthy' })).toBeInTheDocument()
     expect(screen.getByText('42.5%')).toBeInTheDocument()
@@ -31,20 +31,20 @@ describe('NodeCard', () => {
   test('clic remonte le nœud', async () => {
     const user = userEvent.setup()
     const onClick = vi.fn()
-    render(<NodeCard node={node} isSelected={false} onClick={onClick} />)
+    render(<NodeCard node={node} isSelected={false} isAlerting={false} onClick={onClick} />)
 
     await user.click(screen.getByRole('button'))
     expect(onClick).toHaveBeenCalledWith(node)
   })
 
   test('sélection reflétée via aria-pressed', () => {
-    render(<NodeCard node={node} isSelected={true} onClick={() => {}} />)
+    render(<NodeCard node={node} isSelected={true} isAlerting={false} onClick={() => {}} />)
     expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'true')
   })
 
   test("masque le bloc métriques quand il n'y en a pas", () => {
     const bare = { ...node, cpu: undefined, memory: undefined }
-    render(<NodeCard node={bare} isSelected={false} onClick={() => {}} />)
+    render(<NodeCard node={bare} isSelected={false} isAlerting={false} onClick={() => {}} />)
     expect(screen.queryByText('CPU')).not.toBeInTheDocument()
   })
 })

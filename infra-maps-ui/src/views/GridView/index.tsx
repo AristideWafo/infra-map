@@ -8,6 +8,7 @@ import { ConnectionSVG } from './ConnectionSVG'
 interface GridViewProps {
   tree: UnifiedNode | null
   connections: Connection[]
+  alertingIds: ReadonlySet<string>
   isLoading: boolean
   isError: boolean
   errorMessage: string
@@ -18,6 +19,7 @@ interface GridViewProps {
 export function GridView({
   tree,
   connections,
+  alertingIds,
   isLoading,
   isError,
   errorMessage,
@@ -39,6 +41,7 @@ export function GridView({
           key={zone.id}
           zone={zone}
           selectedNodeId={selectedNodeId}
+          alertingIds={alertingIds}
           onSelect={onSelect}
         />
       ))}

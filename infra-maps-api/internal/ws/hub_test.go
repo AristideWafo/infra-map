@@ -94,3 +94,21 @@ func TestAlertWatcher_ProviderErrorKeepsState(t *testing.T) {
 	w.Poll(context.Background()) // ne panique pas, ne "résout" pas l'alerte
 	assert.Len(t, w.active, 1)
 }
+
+func TestHub_WelcomeReplaysActiveAlerts(t *testing.T) {
+	hub := NewHub(testLog())
+	provider := &fakeAlerts{alerts: []models.Alert{{ID: "a1", NodeID: "pod-1"}}}
+	w := NewAlertWatcher(provider, hub, time.Hour, testLog())
+
+	// L'alerte se déclenche AVANT toute connexion client
+	w.Poll(context.Background())
+
+	conn := dial(t, hub)
+	_ = conn.SetReadDeadline(time.Now().Add(time.Second))
+	_, data, err := conn.ReadMessage()
+	require.NoError(t, err)
+
+	var msg Message
+	require.NoError(t, json.Unmarshal(data, &msg))
+	assert.Equal(t, "alert_fired", msg.Type)
+}

@@ -346,3 +346,110 @@
   height: 100%;
   pointer-events: none;
 }
+
+/* Alerte pulse */
+@keyframes alert-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--status-critical-glow); }
+  50%      { box-shadow: 0 0 0 8px transparent; }
+}
+
+.node-card--alerting {
+  animation: alert-pulse 2s ease-in-out infinite;
+  border-color: var(--status-critical);
+}
+
+/* Side panel — onglets */
+.side-panel__tabs {
+  display: flex;
+  height: var(--panel-tab-height);
+  border-bottom: var(--border-width) solid var(--border-default);
+}
+
+.side-panel__tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  cursor: pointer;
+}
+
+.side-panel__tab--active {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+}
+
+.side-panel__content {
+  padding: var(--node-padding);
+}
+
+.side-panel__info {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  padding: var(--node-padding);
+}
+
+.metrics-chart {
+  margin-bottom: var(--node-padding);
+}
+
+.metrics-chart__title {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+/* Log viewer */
+.log-viewer__controls {
+  padding: var(--grid-gap) var(--node-padding);
+  border-bottom: var(--border-width) solid var(--border-muted);
+}
+
+.log-viewer__controls select {
+  background: var(--bg-input);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--node-border-radius);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  padding: 4px 8px;
+}
+
+.log-viewer__list {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  padding: var(--grid-gap) var(--node-padding);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.log-viewer__info {
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+}
+
+.log-line {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.log-line__time {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.log-line__level {
+  flex-shrink: 0;
+  width: 48px;
+}
+
+.log-line--error .log-line__level { color: var(--status-critical); }
+.log-line--warn .log-line__level  { color: var(--status-warning); }
+.log-line--debug .log-line__level { color: var(--text-secondary); }
+.log-line--info .log-line__level  { color: var(--status-healthy); }
+
+.log-line__msg {
+  word-break: break-all;
+}

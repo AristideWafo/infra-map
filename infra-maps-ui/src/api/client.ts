@@ -1,4 +1,10 @@
-import type { UnifiedNode, ConnectionsResponse, HealthStatus } from '../types/infra'
+import type {
+  UnifiedNode,
+  ConnectionsResponse,
+  HealthStatus,
+  MetricsResponse,
+  LogsResponse,
+} from '../types/infra'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 
@@ -30,3 +36,9 @@ export const fetchNodeDetail = (nodeId: string) => apiFetch<UnifiedNode>(`/nodes
 export const fetchConnections = () => apiFetch<ConnectionsResponse>('/connections')
 
 export const fetchHealth = () => apiFetch<HealthStatus>('/health')
+
+export const fetchNodeMetrics = (nodeId: string, params?: { from?: string; to?: string; step?: string; metric?: string }) =>
+  apiFetch<MetricsResponse>(`/nodes/${nodeId}/metrics`, params as Record<string, string>)
+
+export const fetchNodeLogs = (nodeId: string, params?: { limit?: string; level?: string }) =>
+  apiFetch<LogsResponse>(`/nodes/${nodeId}/logs`, params as Record<string, string>)
