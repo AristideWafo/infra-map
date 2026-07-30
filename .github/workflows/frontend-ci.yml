@@ -2,12 +2,12 @@ name: Frontend CI
 
 on:
   push:
-    branches: [main]
+    branches: [prod]
     paths:
       - 'infra-maps-ui/**'
       - '.github/workflows/frontend-ci.yml'
   pull_request:
-    branches: [main]
+    branches: [prod]
     paths:
       - 'infra-maps-ui/**'
       - '.github/workflows/frontend-ci.yml'

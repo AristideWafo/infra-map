@@ -2,12 +2,12 @@ name: Backend CI
 
 on:
   push:
-    branches: [main]
+    branches: [prod]
     paths:
       - 'infra-maps-api/**'
       - '.github/workflows/backend-ci.yml'
   pull_request:
-    branches: [main]
+    branches: [prod]
     paths:
       - 'infra-maps-api/**'
       - '.github/workflows/backend-ci.yml'

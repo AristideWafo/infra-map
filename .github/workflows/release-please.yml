@@ -2,15 +2,19 @@ name: Release Please
 
 on:
   push:
-    branches: [main]
+    branches: [prod]
 
 permissions:
   contents: write
   pull-requests: write
+  packages: write
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      api_release_created: ${{ steps.release-please.outputs['infra-maps-api--release_created'] }}
+      api_tag: ${{ steps.release-please.outputs['infra-maps-api--tag_name'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release-please
@@ -33,3 +37,31 @@ jobs:
             -q '.[].number' | while read -r pr; do
             gh pr merge "$pr" --squash --auto --repo "${{ github.repository }}"
           done
+
+  # Publie l'image versionnée sur GHCR quand une release backend est créée.
+  # Tag image = tag de release. Jamais de :latest en prod.
+  docker-publish:
+    needs: release-please
+    if: needs.release-please.outputs.api_release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: infra-maps-api
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/infra-maps-api:${{ needs.release-please.outputs.api_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
