@@ -9,6 +9,7 @@ import { GridView } from './views/GridView'
 import { SidePanel } from './components/SidePanel'
 import { FilterBar } from './components/Toolbar/FilterBar'
 import { Breadcrumb } from './components/Toolbar/Breadcrumb'
+import { SearchInput } from './components/Toolbar/SearchInput'
 import './App.css'
 
 function App() {
@@ -62,8 +63,9 @@ function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [selectNode])
+  const allNodes = flattenTree(tree)
   const namespaces = [
-    ...new Set(flattenTree(tree).flatMap((n) => (n.namespace ? [n.namespace] : []))),
+    ...new Set(allNodes.flatMap((n) => (n.namespace ? [n.namespace] : []))),
   ].sort()
 
   return (
@@ -82,6 +84,7 @@ function App() {
           onTagChange={setFilterTag}
         />
         <span className="toolbar__spacer" />
+        <SearchInput nodes={allNodes} onSelect={selectNode} />
         {lastRefresh && (
           <span className="toolbar__refresh mono">MAJ {lastRefresh.toLocaleTimeString()}</span>
         )}
